@@ -1,4 +1,4 @@
-export type GradingScale = '5.0' | '4.0';
+﻿export type GradingScale = '5.0' | '4.0';
 
 export type GradeLetter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 

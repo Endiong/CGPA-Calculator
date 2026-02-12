@@ -1,4 +1,4 @@
-import { GRADE_OPTIONS } from './constants';
+﻿import { GRADE_OPTIONS } from './constants';
 import { Course, GradingScale, Year } from './types';
 
 export const generateId = (): string => {
@@ -16,6 +16,7 @@ export const calculateSemesterStats = (courses: Course[], scale: GradingScale) =
   let totalPoints = 0;
 
   courses.forEach((course) => {
+    // Only calculate if unit is valid number
     const unit = Number(course.unit) || 0;
     if (unit > 0) {
       totalUnits += unit;
@@ -59,6 +60,7 @@ export const getClassOfDegree = (cgpa: number, scale: GradingScale): string => {
     if (cgpa >= 1.00) return 'Pass';
     return 'Fail';
   } else {
+    // Standard 4.0 Scale Mapping
     if (cgpa >= 3.50) return 'First Class Honours';
     if (cgpa >= 3.00) return 'Second Class Upper';
     if (cgpa >= 2.00) return 'Second Class Lower';

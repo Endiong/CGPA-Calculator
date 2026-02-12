@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calculator, Plus, FileDown, Trash2, X, Info, Sparkles } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Calculator, Plus, FileDown, Trash2, X, Info } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Year, GradingScale, Course } from './types';
@@ -9,7 +9,6 @@ import SemesterSection from './components/SemesterSection';
 import Footer from './components/Footer';
 import GradingInfoModal from './components/GradingInfoModal';
 import ConfirmationModal from './components/ConfirmationModal';
-import AIScannerModal from './components/AIScannerModal';
 
 function App() {
   // State initialization with localStorage check
@@ -40,7 +39,6 @@ function App() {
   });
 
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   // Confirmation Modal State
   const [confirmationState, setConfirmationState] = useState<{
@@ -121,7 +119,7 @@ function App() {
   };
 
   const deleteYear = (e: React.MouseEvent, yearId: string) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent tab switching when clicking delete
 
     const yearIndex = data.findIndex(y => y.id === yearId);
 
@@ -143,7 +141,10 @@ function App() {
       isDestructive: true,
       preferenceKey: "delete_year",
       onConfirm: () => {
+        // Filter out the deleted year
         const filteredData = data.filter(y => y.id !== yearId);
+
+        // Renumber remaining years to be sequential (Year 1, Year 2, Year 3...)
         const newData = filteredData.map((year, index) => ({
           ...year,
           name: `Year ${index + 1}`
@@ -151,6 +152,7 @@ function App() {
 
         setData(newData);
 
+        // If we deleted the active year, switch to the first available one (or the previous one)
         if (yearId === activeYearId) {
           const newActiveIndex = Math.min(yearIndex, newData.length - 1);
           setActiveYearId(newData[newActiveIndex]?.id || newData[0].id);
@@ -204,9 +206,15 @@ function App() {
 
           const filteredSemesters = year.semesters.filter(sem => sem.id !== semesterId);
 
+          // Optional: Rename semesters to maintain order if desired, 
+          // but typically "First" and "Second" are distinct entities rather than strict indices.
+          // For now, let's keep names as they initially created unless we want strictly re-number logic.
+          // Let's implement strict re-naming for consistency with Year logic if user deletes "First Semester".
+
           const renamedSemesters = filteredSemesters.map((sem, index) => {
             const num = index + 1;
             const name = num === 1 ? 'First Semester' : num === 2 ? 'Second Semester' : num === 3 ? 'Third Semester' : `Semester ${num}`;
+            // Only rename if it still looks like a standard name, otherwise keep custom name if we allowed custom names (which we don't yet)
             return { ...sem, name };
           });
 
@@ -255,6 +263,7 @@ function App() {
       doc.triangle(0, 0, pageWidth * 0.6, 0, 0, pageHeight * 0.4, 'F');
 
       doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]); // Dark Green Accent
+      // Small geometric accent top left
       doc.rect(0, 20 + yOffset, 8, 40, 'F');
     };
 
@@ -263,14 +272,14 @@ function App() {
 
     // Brand/Logo Area (Top Left)
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.setFont("times", "bold");
+    doc.setFont("times", "bold"); // Changed to Times
     doc.setFontSize(14);
     doc.text("GPA CALCULATOR", 20, 30);
 
     // Title Section (Center-Left)
     const titleY = pageHeight / 3;
     doc.setFontSize(40);
-    doc.setFont("times", "bold");
+    doc.setFont("times", "bold"); // Changed to Times
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
     doc.text("ACADEMIC", 20, titleY);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -284,7 +293,7 @@ function App() {
     doc.line(20, titleY + 45, 100, titleY + 45);
 
     // Subtitle / Abstract
-    doc.setFontSize(10);
+    doc.setFontSize(10); // Minimalist: Reduced size
     doc.setFont("helvetica", "normal");
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
     const summaryText = "This document contains a comprehensive breakdown of academic performance, including Semester GPAs, Cumulative GPA, and degree classification status.";
@@ -292,7 +301,7 @@ function App() {
 
     // Bottom "Prepared For" Box
     const boxY = pageHeight - 60;
-    doc.setFillColor(17, 24, 39);
+    doc.setFillColor(17, 24, 39); // Dark Gray/Black Box
     doc.rect(0, boxY, pageWidth * 0.7, 40, 'F');
 
     doc.setTextColor(255, 255, 255);
@@ -305,7 +314,7 @@ function App() {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(156, 163, 175);
+    doc.setTextColor(156, 163, 175); // Light gray text
     doc.text("GENERATED BY", 100, boxY + 12);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -317,12 +326,12 @@ function App() {
 
     // Page Header
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(0, 0, 10, pageHeight, 'F');
+    doc.rect(0, 0, 10, pageHeight, 'F'); // Green sidebar line
 
     let currentY = 30;
 
     doc.setFontSize(24);
-    doc.setFont("times", "bold");
+    doc.setFont("times", "bold"); // Times
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
     doc.text("OVERVIEW & STATUS", 25, currentY);
 
@@ -339,16 +348,18 @@ function App() {
       doc.setDrawColor(229, 231, 235);
       doc.setFillColor(255, 255, 255);
       if (highlight) {
-        doc.setFillColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-        doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.setFillColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]); // highlight bg
+        doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);   // highlight border
       }
-      doc.rect(x, y, cardWidth, cardHeight, 'FD');
+      doc.rect(x, y, cardWidth, cardHeight, 'FD'); // Fill and Draw
 
+      // Label
       doc.setFontSize(9);
       doc.setTextColor(lightText[0], lightText[1], lightText[2]);
       doc.setFont("helvetica", "bold");
       doc.text(label.toUpperCase(), x + 5, y + 10);
 
+      // Value
       doc.setFontSize(16);
       doc.setTextColor(highlight ? primaryColor[0] : darkText[0], highlight ? primaryColor[1] : darkText[1], highlight ? primaryColor[2] : darkText[2]);
       doc.text(value, x + 5, y + 25);
@@ -364,10 +375,11 @@ function App() {
 
     // --- DETAILED BREAKDOWN ---
     doc.setFontSize(18);
-    doc.setFont("times", "bold");
+    doc.setFont("times", "bold"); // Times
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
     doc.text("ACADEMIC BREAKDOWN", 25, currentY);
 
+    // Line under title
     doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setLineWidth(1);
     doc.line(25, currentY + 3, 100, currentY + 3);
@@ -375,14 +387,16 @@ function App() {
     currentY += 15;
 
     filteredData.forEach((year) => {
+      // Check for page break
       if (currentY > pageHeight - 40) {
         doc.addPage();
         doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.rect(0, 0, 10, pageHeight, 'F');
+        doc.rect(0, 0, 10, pageHeight, 'F'); // Sidebar
         currentY = 30;
       }
 
-      doc.setFont("times", "bold");
+      // Year Header
+      doc.setFont("times", "bold"); // Times
       doc.setFontSize(14);
       doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
       doc.text(year.name.toUpperCase(), 25, currentY);
@@ -391,6 +405,7 @@ function App() {
       year.semesters.forEach((sem) => {
         const stats = calculateSemesterStats(sem.courses, scale);
 
+        // Check space for semester block
         if (currentY > pageHeight - 50) {
           doc.addPage();
           doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -398,11 +413,13 @@ function App() {
           currentY = 30;
         }
 
-        doc.setFont("times", "bold");
+        // Semester Sub-header
+        doc.setFont("times", "bold"); // Times
         doc.setFontSize(11);
         doc.setTextColor(darkText[0], darkText[1], darkText[2]);
         doc.text(`${sem.name} `, 25, currentY + 6);
 
+        // GPA Badge
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(lightText[0], lightText[1], lightText[2]);
@@ -411,8 +428,9 @@ function App() {
 
         currentY += 10;
 
+        // Table
         const tableBody = sem.courses
-          .filter(c => (Number(c.unit) || 0) > 0)
+          .filter(c => (Number(c.unit) || 0) > 0) // Double check filter
           .map((course, index) => {
             const points = (Number(course.unit) || 0) * getGradeValue(course.grade, scale);
             return [
@@ -439,11 +457,11 @@ function App() {
           },
           bodyStyles: {
             textColor: 50,
-            lineColor: [243, 244, 246],
+            lineColor: [243, 244, 246], // Very light gray borders
             lineWidth: 0.1,
           },
           alternateRowStyles: {
-            fillColor: [249, 250, 251]
+            fillColor: [249, 250, 251] // Gray 50
           },
           columnStyles: {
             0: { cellWidth: 10, halign: 'center', textColor: 150 },
@@ -455,7 +473,7 @@ function App() {
           },
           styles: {
             font: "helvetica",
-            fontSize: 8,
+            fontSize: 8, // Minimalist: Reduced font size from 9 to 8
             cellPadding: 3,
           }
         });
@@ -464,7 +482,7 @@ function App() {
         currentY = doc.lastAutoTable.finalY + 10;
       });
 
-      currentY += 5;
+      currentY += 5; // Extra space between years
     });
 
     // Page Numbers Footer
@@ -560,30 +578,6 @@ function App() {
     }));
   };
 
-  // AI Import Logic
-  const handleAIImport = (newCourses: Course[], semesterId: string) => {
-    setData((prevData) =>
-      prevData.map((year) => {
-        const hasSemester = year.semesters.some(s => s.id === semesterId);
-        if (!hasSemester) return year;
-
-        return {
-          ...year,
-          semesters: year.semesters.map((sem) => {
-            if (sem.id === semesterId) {
-              const existingCourses = sem.courses.filter(c => c.code || c.title || c.unit > 0);
-              return {
-                ...sem,
-                courses: [...existingCourses, ...newCourses]
-              };
-            }
-            return sem;
-          })
-        };
-      })
-    );
-  };
-
   // Derived State
   const activeYear = data.find((y) => y.id === activeYearId) || data[0];
   const overallStats = calculateOverallStats(data, scale);
@@ -611,16 +605,6 @@ function App() {
             >
               <Trash2 size={16} />
               <span>Clear Data</span>
-            </button>
-
-            {/* AI Scan Button */}
-            <button
-              onClick={() => setIsAIModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-sm transition-all shadow-md shadow-blue-200"
-              title="Scan Result with AI"
-            >
-              <Sparkles size={16} />
-              <span className="hidden sm:inline">AI Scan</span>
             </button>
 
             {/* Info Button */}
@@ -782,14 +766,6 @@ function App() {
         confirmLabel={confirmationState.confirmLabel}
         isDestructive={confirmationState.isDestructive}
         preferenceKey={confirmationState.preferenceKey}
-      />
-
-      {/* AI Scanner Modal */}
-      <AIScannerModal
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-        onImport={handleAIImport}
-        semesters={activeYear.semesters}
       />
     </div>
   );

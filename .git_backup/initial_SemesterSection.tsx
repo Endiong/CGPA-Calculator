@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { PlusCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Semester, GradingScale, Course } from '../types';
 import { calculateSemesterStats } from '../utils';
@@ -64,6 +64,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
       {!isCollapsed && (
         <div className="p-4 sm:p-6 bg-white">
           <div className="overflow-x-auto rounded-lg border border-gray-100">
+            {/* Added min-w-[XXXpx] to columns to prevent squashing on mobile */}
             <table className="w-full text-left border-collapse min-w-[650px] md:min-w-full">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-semibold">
