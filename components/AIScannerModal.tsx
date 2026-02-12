@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Sparkles, AlertCircle, Check, Loader2, Camera, Trash2, Settings2 } from 'lucide-react';
+import { X, Upload, AlertCircle, Loader2, Camera, Trash2, Plus, Check, ChevronDown } from 'lucide-react';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Course, GradeLetter, Semester } from '../types';
 import { generateId } from '../utils';
@@ -11,12 +11,13 @@ interface AIScannerModalProps {
   semesters: Semester[];
 }
 
+const GRADES: (GradeLetter | '')[] = ['', 'A', 'B', 'C', 'D', 'E', 'F'];
+
 const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImport, semesters }) => {
   const [step, setStep] = useState<'upload' | 'scanning' | 'review'>('upload');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [extractedCourses, setExtractedCourses] = useState<Course[]>([]);
   const [selectedSemesterId, setSelectedSemesterId] = useState<string>('');
-  const [gradingHint, setGradingHint] = useState<'standard' | 'us'>('standard');
   const [error, setError] = useState<string | null>(null);
 
   // Camera State
@@ -24,10 +25,8 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Define stopCamera before any useEffect or early return that references it
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -36,21 +35,16 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     setIsCameraActive(false);
   };
 
-  // Set default semester when modal opens or semesters change
   useEffect(() => {
-    if (semesters.length > 0 && !selectedSemesterId) {
+    if (isOpen && semesters.length > 0 && !selectedSemesterId) {
       setSelectedSemesterId(semesters[0].id);
     }
   }, [semesters, isOpen]);
 
-  // Cleanup camera on unmount or close
   useEffect(() => {
-    return () => {
-      stopCamera();
-    };
+    return () => { stopCamera(); };
   }, []);
 
-  // Attach stream to video element when camera is active
   useEffect(() => {
     if (isCameraActive && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
@@ -65,7 +59,6 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     setImagePreview(null);
     setExtractedCourses([]);
     setError(null);
-    if (semesters.length > 0) setSelectedSemesterId(semesters[0].id);
   };
 
   const handleClose = () => {
@@ -82,8 +75,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
       streamRef.current = stream;
       setIsCameraActive(true);
     } catch (err: any) {
-      console.error(err);
-      setError("Could not access camera. Please check permissions or use the upload option.");
+      setError("Could not access camera. Please check permissions.");
     }
   };
 
@@ -91,15 +83,12 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
       const context = canvas.getContext('2d');
       if (context) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
         stopCamera();
         setImagePreview(dataUrl);
         scanDocument(dataUrl.split(',')[1], 'image/jpeg');
@@ -109,21 +98,17 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
-    }
+    if (file) processFile(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const processFile = (file: File) => {
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf';
-
     if (!isImage && !isPdf) {
-      setError('Please upload an image (JPG, PNG) or PDF document.');
+      setError('Please upload an image (JPG, PNG) or PDF.');
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -137,13 +122,9 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     setStep('scanning');
     setError(null);
 
-    const gradingRules = gradingHint === 'standard'
-      ? "A=70-100, B=60-69, C=50-59, D=45-49, E=40-44, F=0-39"
-      : "A=90-100, B=80-89, C=70-79, D=60-69, F=0-59";
-
     try {
       if (!import.meta.env.VITE_GOOGLE_API_KEY) {
-        throw new Error("Missing Google API Key. Please add VITE_GOOGLE_API_KEY to your env.");
+        throw new Error("Missing API Key. Add VITE_GOOGLE_API_KEY to your .env.local file.");
       }
 
       const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_API_KEY);
@@ -161,38 +142,32 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
                 unit: { type: SchemaType.NUMBER },
                 grade: { type: SchemaType.STRING },
               },
-              required: ["code", "unit", "grade"]
+              required: ["code", "unit"]
             }
           }
         }
       });
 
-      const prompt = `Analyze this academic result document. It may be an image or a PDF. Extract the courses listed. 
-                     Return a JSON array where each object has:
-                     - 'code' (Course Code, e.g., MTH101)
-                     - 'title' (Course Title)
-                     - 'unit' (Credit Unit/Load, number)
-                     - 'grade' (Letter Grade: A, B, C, D, E, or F). 
-                     
-                     Extraction Logic:
-                     1. FIRST, look for a grading key/legend. If found, use it to convert scores to Letter Grades.
-                     2. If Letter Grades are directly visible, use them.
-                     3. If ONLY numerical scores are present, convert them using: ${gradingRules}.
-                     
-                     Ignore header information, student details, or footer text.`;
+      const prompt = `Analyze this academic document. It may be a result sheet, course registration form, or transcript.
+        Extract all courses listed. Return a JSON array where each object has:
+        - 'code' (Course Code, e.g., MTH101)
+        - 'title' (Course Title, if visible)
+        - 'unit' (Credit Unit/Load, number)
+        - 'grade' (Letter Grade: A, B, C, D, E, or F — leave as empty string "" if no grade is shown)
+        
+        Rules:
+        1. If letter grades are visible, use them directly.
+        2. If only numerical scores are present, convert using: A=70-100, B=60-69, C=50-59, D=45-49, E=40-44, F=0-39.
+        3. If this is a course registration form with NO grades/scores, set grade to "".
+        4. Ignore headers, student info, and footer text.`;
 
       const result = await model.generateContent([
         prompt,
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: mimeType
-          }
-        }
+        { inlineData: { data: base64Data, mimeType } }
       ]);
 
       const rawText = result.response.text();
-      if (!rawText) throw new Error("No data returned from AI");
+      if (!rawText) throw new Error("No data returned from AI.");
 
       const parsedData = JSON.parse(rawText);
 
@@ -205,22 +180,22 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
       }));
 
       if (courses.length === 0) {
-        throw new Error("No legible courses found in the document.");
+        throw new Error("No courses found in the document.");
       }
 
       setExtractedCourses(courses);
       setStep('review');
 
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Failed to analyze document.");
       setStep('upload');
     }
   };
 
   const validateGrade = (input: string): GradeLetter => {
+    if (!input || input.trim() === '') return 'A';
     const valid = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const upper = input?.toUpperCase().trim().charAt(0);
+    const upper = input.toUpperCase().trim().charAt(0);
     return valid.includes(upper) ? (upper as GradeLetter) : 'A';
   };
 
@@ -232,57 +207,93 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     setExtractedCourses(prev => prev.filter(c => c.id !== id));
   };
 
+  const addEmptyRow = () => {
+    setExtractedCourses(prev => [...prev, {
+      id: generateId(),
+      code: '',
+      title: '',
+      unit: 0,
+      grade: 'A'
+    }]);
+  };
+
   const handleImportConfirm = () => {
     if (!selectedSemesterId) {
       setError("Please select a target semester.");
       return;
     }
-    onImport(extractedCourses, selectedSemesterId);
+    const validCourses = extractedCourses.filter(c => c.code.trim() !== '' || c.unit > 0);
+    if (validCourses.length === 0) {
+      setError("No valid courses to import.");
+      return;
+    }
+    onImport(validCourses, selectedSemesterId);
     handleClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="absolute inset-0" onClick={handleClose}></div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative z-10 flex flex-col max-h-[90vh]">
+      <div className="bg-white w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh]">
 
-        {/* Header */}
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-2 text-primary">
-            <Sparkles size={20} />
-            <h2 className="text-lg font-bold text-gray-900">AI Result Scanner</h2>
-          </div>
-          <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-            <X size={20} />
+        {/* Header — clean and minimal */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-base font-bold text-gray-900">
+            {step === 'review' ? 'Review Courses' : 'Scan Document'}
+          </h2>
+          <button onClick={handleClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
+            <X size={18} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="flex-1 overflow-y-auto">
 
+          {/* Semester Selector — always visible at top */}
+          {step !== 'scanning' && (
+            <div className="px-5 pt-4 pb-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Import to</label>
+              <div className="relative">
+                <select
+                  value={selectedSemesterId}
+                  onChange={(e) => setSelectedSemesterId(e.target.value)}
+                  className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                >
+                  {semesters.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
+          {/* Error */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-start gap-2">
+            <div className="mx-5 mt-3 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-start gap-2">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
+          {/* STEP: Upload */}
           {step === 'upload' && !isCameraActive && (
-            <div className="text-center py-2">
-              <p className="text-gray-600 mb-6 text-sm">
-                Take a photo or upload a file (Image/PDF) of your results. AI will extract the courses for you.
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-500 mb-4">
+                Upload a result sheet, course form, or transcript. AI will extract the courses.
               </p>
 
+              {/* Upload area */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group flex flex-col items-center justify-center bg-gray-50"
+                className="border-2 border-dashed border-gray-200 rounded-xl p-8 hover:border-primary/40 hover:bg-blue-50/30 transition-all cursor-pointer flex flex-col items-center text-center"
               >
-                <div className="size-14 rounded-full bg-blue-100 text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-sm">
-                  <Upload size={28} />
+                <div className="size-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mb-3">
+                  <Upload size={22} />
                 </div>
-                <h3 className="font-bold text-gray-700 mb-1">Click to Upload File</h3>
-                <p className="text-xs text-gray-400">Supported: JPG, PNG, PDF</p>
+                <p className="text-sm font-medium text-gray-700">Tap to upload file</p>
+                <p className="text-xs text-gray-400 mt-1">JPG, PNG, or PDF</p>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -292,40 +303,21 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
                 />
               </div>
 
-              <div className="mt-4 flex flex-col items-center">
-                <button
-                  onClick={startCamera}
-                  className="w-full max-w-xs flex items-center justify-center gap-2 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm shadow-lg shadow-gray-200"
-                >
-                  <Camera size={18} />
-                  Open Camera
-                </button>
-              </div>
-
-              {/* Grading Hint Selector */}
-              <div className="mt-6 p-3 bg-blue-50/50 rounded-lg border border-blue-100 max-w-xs mx-auto text-left">
-                <div className="flex items-center gap-2 mb-2 text-blue-800">
-                  <Settings2 size={14} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Grading System Hint</span>
-                </div>
-                <select
-                  value={gradingHint}
-                  onChange={(e) => setGradingHint(e.target.value as any)}
-                  className="w-full text-sm bg-white border border-blue-200 rounded-md py-1.5 px-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 outline-none"
-                >
-                  <option value="standard">Standard (A = 70+)</option>
-                  <option value="us">US / North American (A = 90+)</option>
-                </select>
-                <p className="text-[10px] text-gray-500 mt-1.5 leading-tight">
-                  Select if no key is found on document.
-                </p>
-              </div>
+              {/* Camera button */}
+              <button
+                onClick={startCamera}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Camera size={16} />
+                Use Camera
+              </button>
             </div>
           )}
 
+          {/* STEP: Camera active */}
           {step === 'upload' && isCameraActive && (
-            <div className="flex flex-col items-center">
-              <div className="relative w-full max-w-md bg-black rounded-lg overflow-hidden aspect-[3/4] md:aspect-video mb-4 shadow-lg">
+            <div className="px-5 py-4">
+              <div className="relative w-full bg-black rounded-xl overflow-hidden aspect-[3/4] sm:aspect-video mb-3">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -335,149 +327,148 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
                 />
                 <canvas ref={canvasRef} className="hidden" />
               </div>
-              <div className="flex gap-4 w-full max-w-md">
+              <div className="flex gap-2">
                 <button
                   onClick={stopCamera}
-                  className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={capturePhoto}
-                  className="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-colors shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                 >
-                  <Camera size={20} />
+                  <Camera size={16} />
                   Capture
                 </button>
               </div>
             </div>
           )}
 
+          {/* STEP: Scanning */}
           {step === 'scanning' && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="relative mb-8">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
-                <div className="relative bg-white p-6 rounded-full shadow-lg border border-gray-100">
-                  <Loader2 size={48} className="text-primary animate-spin" />
-                </div>
+            <div className="flex flex-col items-center justify-center py-16 px-5">
+              <div className="mb-6">
+                <Loader2 size={36} className="text-primary animate-spin" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Analyzing...</h3>
-              <p className="text-sm text-gray-500 max-w-xs text-center">
-                We're extracting details using the <strong>{gradingHint === 'standard' ? 'Standard' : 'US'}</strong> grading context.
-              </p>
+              <h3 className="text-base font-bold text-gray-900 mb-1">Analyzing document...</h3>
+              <p className="text-sm text-gray-400">This usually takes a few seconds</p>
             </div>
           )}
 
+          {/* STEP: Review */}
           {step === 'review' && (
-            <div>
-              {/* Semester Selector */}
-              <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <Check className="text-green-600" size={20} />
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-sm">Found {extractedCourses.length} Courses</h3>
-                    <p className="text-xs text-gray-500">Review and edit before importing</p>
-                  </div>
-                </div>
+            <div className="px-5 py-4">
 
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Import to:</label>
-                  <select
-                    value={selectedSemesterId}
-                    onChange={(e) => setSelectedSemesterId(e.target.value)}
-                    className="text-sm border-gray-300 rounded-md focus:ring-primary focus:border-primary py-1.5 pl-2 pr-8"
-                  >
-                    {semesters.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+              {/* Summary */}
+              <div className="flex items-center gap-2 mb-4">
+                <div className="size-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                  <Check size={14} />
                 </div>
+                <span className="text-sm font-medium text-gray-700">
+                  {extractedCourses.length} course{extractedCourses.length !== 1 ? 's' : ''} found
+                </span>
               </div>
 
-              {/* Editable Table */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden mb-6 max-h-[350px] overflow-y-auto shadow-sm">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 text-gray-500 font-semibold text-xs sticky top-0 z-10 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3 border-b border-gray-200 w-12">#</th>
-                      <th className="px-4 py-3 border-b border-gray-200">Code</th>
-                      <th className="px-4 py-3 border-b border-gray-200 w-24">Unit</th>
-                      <th className="px-4 py-3 border-b border-gray-200 w-24">Grade</th>
-                      <th className="px-4 py-3 border-b border-gray-200 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {extractedCourses.map((c, index) => (
-                      <tr key={c.id} className="group hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-2 text-gray-400 font-mono text-xs">{index + 1}</td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="text"
-                            value={c.code}
-                            onChange={(e) => updateCourse(c.id, 'code', e.target.value)}
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 font-medium text-gray-900 uppercase"
-                            placeholder="CODE"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            min="0"
-                            value={c.unit}
-                            onChange={(e) => updateCourse(c.id, 'unit', parseInt(e.target.value) || 0)}
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-gray-700"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <select
-                            value={c.grade}
-                            onChange={(e) => updateCourse(c.id, 'grade', e.target.value)}
-                            className="w-full bg-transparent border-none text-sm font-bold text-gray-900 focus:ring-0 cursor-pointer py-1"
-                          >
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                            <option value="E">E</option>
-                            <option value="F">F</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <button
-                            onClick={() => removeCourse(c.id)}
-                            className="text-gray-300 hover:text-red-500 transition-colors p-1"
-                            title="Remove row"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* Editable course list — card-based for mobile */}
+              <div className="space-y-2 mb-4 max-h-[45vh] overflow-y-auto pr-1">
+                {extractedCourses.map((c, index) => (
+                  <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100 group">
+                    {/* Top row: Code + Delete */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-[10px] font-bold text-gray-400 w-5 shrink-0">{index + 1}</span>
+                        <input
+                          type="text"
+                          value={c.code}
+                          onChange={(e) => updateCourse(c.id, 'code', e.target.value)}
+                          className="text-sm font-bold text-gray-900 bg-transparent border-none outline-none w-full uppercase placeholder:text-gray-300 placeholder:normal-case"
+                          placeholder="Course code"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removeCourse(c.id)}
+                        className="p-1 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    {/* Title */}
+                    <input
+                      type="text"
+                      value={c.title}
+                      onChange={(e) => updateCourse(c.id, 'title', e.target.value)}
+                      className="text-xs text-gray-500 bg-transparent border-none outline-none w-full mb-2 placeholder:text-gray-300"
+                      placeholder="Course title (optional)"
+                    />
+                    {/* Bottom row: Units + Grade */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-gray-400 font-medium">Units</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={c.unit || ''}
+                          onChange={(e) => updateCourse(c.id, 'unit', parseInt(e.target.value) || 0)}
+                          className="w-12 text-sm text-center font-medium text-gray-800 bg-white border border-gray-200 rounded-md py-1 outline-none focus:ring-1 focus:ring-primary/30"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-gray-400 font-medium">Grade</span>
+                        <select
+                          value={c.grade}
+                          onChange={(e) => updateCourse(c.id, 'grade', e.target.value)}
+                          className="text-sm font-bold text-gray-800 bg-white border border-gray-200 rounded-md py-1 px-2 outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer"
+                        >
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                          <option value="E">E</option>
+                          <option value="F">F</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
                 {extractedCourses.length === 0 && (
-                  <div className="p-8 text-center text-gray-400 text-sm">All courses removed.</div>
+                  <div className="py-8 text-center text-gray-400 text-sm">
+                    No courses yet. Add one below.
+                  </div>
                 )}
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={reset}
-                  className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Scan New
-                </button>
-                <button
-                  onClick={handleImportConfirm}
-                  disabled={extractedCourses.length === 0}
-                  className="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-colors shadow-lg shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Import Courses
-                </button>
-              </div>
+              {/* Add Row */}
+              <button
+                onClick={addEmptyRow}
+                className="w-full py-2 text-sm font-medium text-primary border border-dashed border-primary/30 rounded-lg hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5 mb-4"
+              >
+                <Plus size={14} />
+                Add Course
+              </button>
             </div>
           )}
         </div>
+
+        {/* Footer actions */}
+        {step === 'review' && (
+          <div className="px-5 py-4 border-t border-gray-100 flex gap-2 bg-white">
+            <button
+              onClick={reset}
+              className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Scan Again
+            </button>
+            <button
+              onClick={handleImportConfirm}
+              disabled={extractedCourses.length === 0}
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Import {extractedCourses.length > 0 ? `(${extractedCourses.length})` : ''}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Plus, FileDown, Trash2, X, Info, Sparkles } from 'lucide-react';
+import { Calculator, Plus, FileDown, Trash2, X, Info, ScanLine } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Year, GradingScale, Course } from './types';
@@ -164,10 +164,9 @@ function App() {
       if (year.id !== yearId) return year;
 
       const newSemesterNumber = year.semesters.length + 1;
-      const semesterName = newSemesterNumber === 1 ? 'First Semester' :
-        newSemesterNumber === 2 ? 'Second Semester' :
-          newSemesterNumber === 3 ? 'Third Semester' :
-            `Semester ${newSemesterNumber}`;
+      const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
+      const label = ordinals[newSemesterNumber - 1] || `${newSemesterNumber}th`;
+      const semesterName = `${label} Semester`;
 
       return {
         ...year,
@@ -206,7 +205,9 @@ function App() {
 
           const renamedSemesters = filteredSemesters.map((sem, index) => {
             const num = index + 1;
-            const name = num === 1 ? 'First Semester' : num === 2 ? 'Second Semester' : num === 3 ? 'Third Semester' : `Semester ${num}`;
+            const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
+            const label = ordinals[num - 1] || `${num}th`;
+            const name = `${label} Semester`;
             return { ...sem, name };
           });
 
@@ -616,11 +617,11 @@ function App() {
             {/* AI Scan Button */}
             <button
               onClick={() => setIsAIModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-sm transition-all shadow-md shadow-blue-200"
-              title="Scan Result with AI"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium text-sm transition-colors border border-gray-200"
+              title="Scan Document with AI"
             >
-              <Sparkles size={16} />
-              <span className="hidden sm:inline">AI Scan</span>
+              <ScanLine size={16} />
+              <span className="hidden sm:inline">Scan</span>
             </button>
 
             {/* Info Button */}
