@@ -55,9 +55,7 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
 
             <div className="hidden sm:block text-right">
               <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase block">Class</span>
-              <span className={`text-xs font-bold ${degreeClass.includes('First') ? 'text-emerald-600 dark:text-emerald-400' :
-                degreeClass.includes('Upper') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
-                }`}>
+              <span className={`text-xs font-bold transition-colors ${colorClass}`}>
                 {degreeClass}
               </span>
             </div>
@@ -66,10 +64,10 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
             <div className="text-right">
               <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase block">CGPA</span>
               <div className="flex items-baseline gap-0.5">
-                <span className="text-2xl font-extrabold text-primary leading-none">{cgpa.toFixed(2)}</span>
+                <span className={`text-2xl font-extrabold transition-colors leading-none ${colorClass}`}>{cgpa.toFixed(2)}</span>
                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">/{scale}</span>
               </div>
-              <span className="sm:hidden text-[10px] font-semibold text-gray-500 dark:text-gray-400">{degreeClass}</span>
+              <span className={`sm:hidden text-[10px] font-semibold transition-colors ${colorClass}`}>{degreeClass}</span>
             </div>
           </div>
         </div>

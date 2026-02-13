@@ -85,3 +85,22 @@ export const getGradeColor = (cgpa: number, scale: GradingScale): string => {
     return 'text-red-600 dark:text-red-400';
   }
 };
+
+export const getGradeColorRGB = (cgpa: number, scale: GradingScale): [number, number, number] => {
+  if (cgpa === 0) return [156, 163, 175]; // Gray 400
+
+  if (scale === '5.0') {
+    if (cgpa >= 4.50) return [5, 150, 105]; // Emerald 600
+    if (cgpa >= 3.50) return [37, 99, 235]; // Blue 600
+    if (cgpa >= 2.40) return [217, 119, 6];  // Amber 600
+    if (cgpa >= 1.50) return [124, 58, 237]; // Violet 600
+    if (cgpa >= 1.00) return [75, 85, 99];   // Gray 600
+    return [220, 38, 38]; // Red 600
+  } else {
+    if (cgpa >= 3.50) return [5, 150, 105]; // Emerald 600
+    if (cgpa >= 3.00) return [37, 99, 235]; // Blue 600
+    if (cgpa >= 2.00) return [217, 119, 6];  // Amber 600
+    if (cgpa >= 1.00) return [124, 58, 237]; // Violet 600
+    return [220, 38, 38]; // Red 600
+  }
+};

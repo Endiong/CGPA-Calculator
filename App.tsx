@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Year, GradingScale, Course } from './types';
 import { getInitialData } from './constants';
-import { calculateOverallStats, calculateSemesterStats, generateId, getGradeValue, getClassOfDegree } from './utils';
+import { calculateOverallStats, calculateSemesterStats, generateId, getGradeValue, getClassOfDegree, getGradeColorRGB } from './utils';
 import SemesterSection from './components/SemesterSection';
 import Footer from './components/Footer';
 import GradingInfoModal from './components/GradingInfoModal';
@@ -249,9 +249,10 @@ function App() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
 
-    // Design Colors (Green "Company Profile" Theme)
-    const primaryColor = [5, 150, 105] as [number, number, number]; // #059669 (Green 600)
-    const secondaryColor = [209, 250, 229] as [number, number, number]; // #d1fae5 (Green 100)
+    // Design Colors (Premium Brand Theme)
+    const primaryColor = [17, 24, 39] as [number, number, number]; // #111827 (Charcoal/Dark Blue)
+    const accentColor = [5, 150, 105] as [number, number, number]; // #059669 (Emerald)
+    const grayBg = [249, 250, 251]; // Gray 50
     const darkText = [17, 24, 39]; // Gray 900
     const lightText = [107, 114, 128]; // Gray 500
 
@@ -268,191 +269,231 @@ function App() {
       return;
     }
 
+    const overall = calculateOverallStats(data, scale);
+    const degreeClass = getClassOfDegree(overall.cgpa, scale);
+    const classRGB = getGradeColorRGB(overall.cgpa, scale);
+
     // --- Helper Functions ---
-    const drawGeometricBackground = (yOffset: number = 0) => {
-      doc.setFillColor(249, 250, 251); // Gray 50 background
+    const drawGeometricBackground = (isCover: boolean = false) => {
+      // Base background
+      doc.setFillColor(grayBg[0], grayBg[1], grayBg[2]);
       doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-      // Diagonal geometric accent
-      doc.setFillColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]); // Light Green
-      doc.triangle(0, 0, pageWidth * 0.6, 0, 0, pageHeight * 0.4, 'F');
+      if (isCover) {
+        // Large background accent for cover
+        doc.setFillColor(243, 244, 246);
+        doc.triangle(pageWidth * 0.4, 0, pageWidth, 0, pageWidth, pageHeight * 0.4, 'F');
 
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]); // Dark Green Accent
-      doc.rect(0, 20 + yOffset, 8, 40, 'F');
+        // Vertical primary accent
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, 12, pageHeight, 'F');
+
+        // Brand accent line
+        doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+        doc.rect(12, pageHeight * 0.6, 4, 80, 'F');
+
+        // Pattern overlay (subtle dots)
+        doc.setFillColor(229, 231, 235);
+        for (let x = 40; x < pageWidth; x += 30) {
+          for (let y = 40; y < pageHeight; y += 30) {
+            doc.circle(x, y, 0.5, 'F');
+          }
+        }
+      } else {
+        // Sidebar accent for content pages
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, 6, pageHeight, 'F');
+
+        // Subtle top accent
+        doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+        doc.rect(0, 0, pageWidth, 2, 'F');
+      }
+    };
+
+    const drawPremiumCard = (x: number, y: number, w: number, h: number, label: string, value: string, rgb: [number, number, number], isMain: boolean = false) => {
+      // Soft Shadow effect
+      doc.setFillColor(243, 244, 246);
+      doc.roundedRect(x + 1, y + 1, w, h, 3, 3, 'F');
+
+      // Card Background
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(229, 231, 235);
+      doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+
+      // Top indicator bar
+      doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+      doc.rect(x + 4, y + 4, 3, 10, 'F');
+
+      // Label
+      doc.setFontSize(8);
+      doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+      doc.setFont("helvetica", "bold");
+      doc.text(label.toUpperCase(), x + 10, y + 10);
+
+      // Value
+      doc.setFontSize(isMain ? 20 : 14);
+      doc.setTextColor(isMain ? rgb[0] : darkText[0], isMain ? rgb[1] : darkText[1], isMain ? rgb[2] : darkText[2]);
+      doc.text(value, x + 10, y + 22);
     };
 
     // --- COVER PAGE ---
-    drawGeometricBackground();
+    drawGeometricBackground(true);
 
-    // Brand/Logo Area (Top Left)
+    // Header Logo/Text
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.setFont("times", "bold");
-    doc.setFontSize(14);
-    doc.text("GPA CALCULATOR", 20, 30);
+    doc.setFont("times", "bolditalic");
+    doc.setFontSize(16);
+    doc.text("Antigravity GPA", 30, 40);
 
-    // Title Section (Center-Left)
+    // Title Section
     const titleY = pageHeight / 3;
-    doc.setFontSize(40);
+    doc.setFontSize(32);
     doc.setFont("times", "bold");
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.text("ACADEMIC", 20, titleY);
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text("PERFORMANCE", 20, titleY + 15);
-    doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.text("REPORT", 20, titleY + 30);
+    doc.text("ACADEMIC", 30, titleY);
+    doc.text("PERFORMANCE", 30, titleY + 14);
 
-    // Decorative Line
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setLineWidth(2);
-    doc.line(20, titleY + 45, 100, titleY + 45);
+    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+    doc.text("REPORT", 30, titleY + 28);
 
-    // Subtitle / Abstract
+    // Meta Info
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-    const summaryText = "This document contains a comprehensive breakdown of academic performance, including Semester GPAs, Cumulative GPA, and degree classification status.";
-    doc.text(doc.splitTextToSize(summaryText, 120), 20, titleY + 60);
+    doc.text("A detailed analysis of your scholarly achievements,", 30, titleY + 45);
+    doc.text("including semester breakdowns and cumulative standing.", 30, titleY + 50);
 
-    // Bottom "Prepared For" Box
-    const boxY = pageHeight - 60;
-    doc.setFillColor(17, 24, 39);
-    doc.rect(0, boxY, pageWidth * 0.7, 40, 'F');
+    // Decorative Separator
+    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
+    doc.setLineWidth(1.5);
+    doc.line(30, titleY + 60, 100, titleY + 60);
 
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text("PREPARED ON", 20, boxY + 12);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    doc.text(dateStr, 20, boxY + 22);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(156, 163, 175);
-    doc.text("GENERATED BY", 100, boxY + 12);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("Official GPA Calculator", 100, boxY + 22);
-
-    // --- SUMMARY PAGE ---
-    doc.addPage();
-
-    // Page Header
+    // Branding Strip
+    const footerY = pageHeight - 60;
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(0, 0, 10, pageHeight, 'F');
+    doc.rect(0, footerY, pageWidth, 40, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text("DATE OF ISSUE", 30, footerY + 12);
+    doc.setFontSize(14);
+    doc.setFont("times", "bold");
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.text(dateStr, 30, footerY + 22);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(209, 213, 219);
+    doc.text("OFFICIAL REPORT NO.", pageWidth - 70, footerY + 12);
+    doc.setFontSize(14);
+    doc.setFont("times", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(`TR-${generateId().toUpperCase()}`, pageWidth - 70, footerY + 22);
+
+    // --- SUMMARY & DETAILS ---
+    doc.addPage();
+    drawGeometricBackground();
 
     let currentY = 30;
 
-    doc.setFontSize(24);
+    // Header title for breakdown
+    doc.setFontSize(22);
     doc.setFont("times", "bold");
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.text("OVERVIEW & STATUS", 25, currentY);
+    doc.text("SUMMARY & STANDING", 25, currentY);
 
-    currentY += 20;
+    currentY += 15;
 
-    const overall = calculateOverallStats(data, scale);
-    const degreeClass = getClassOfDegree(overall.cgpa, scale);
+    // Cards Grid
+    const cardGap = 8;
+    const cw = (pageWidth - 50 - cardGap) / 2;
+    const ch = 35;
 
-    // Summary Cards (Grid Layout)
-    const cardWidth = (pageWidth - 45) / 2;
-    const cardHeight = 35;
+    drawPremiumCard(25, currentY, cw, ch, "Cumulative GPA", overall.cgpa.toFixed(2), classRGB, true);
+    drawPremiumCard(25 + cw + cardGap, currentY, cw, ch, "Degree Classification", degreeClass, classRGB);
 
-    const drawCard = (x: number, y: number, label: string, value: string, highlight: boolean = false) => {
-      doc.setDrawColor(229, 231, 235);
-      doc.setFillColor(255, 255, 255);
-      if (highlight) {
-        doc.setFillColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-        doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      }
-      doc.rect(x, y, cardWidth, cardHeight, 'FD');
+    currentY += ch + cardGap;
 
-      doc.setFontSize(9);
-      doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-      doc.setFont("helvetica", "bold");
-      doc.text(label.toUpperCase(), x + 5, y + 10);
+    drawPremiumCard(25, currentY, cw, ch, "Total Credits/Units", overall.grandTotalUnits.toString(), [107, 114, 128]);
+    drawPremiumCard(25 + cw + cardGap, currentY, cw, ch, "Grading Formula", `Standard ${scale} Scale`, [107, 114, 128]);
 
-      doc.setFontSize(16);
-      doc.setTextColor(highlight ? primaryColor[0] : darkText[0], highlight ? primaryColor[1] : darkText[1], highlight ? primaryColor[2] : darkText[2]);
-      doc.text(value, x + 5, y + 25);
-    };
+    currentY += ch + 25;
 
-    drawCard(25, currentY, "Current CGPA", overall.cgpa.toFixed(2), true);
-    drawCard(25 + cardWidth + 5, currentY, "Degree Class", degreeClass.toUpperCase());
-    currentY += cardHeight + 5;
-    drawCard(25, currentY, "Total Units", overall.grandTotalUnits.toString());
-    drawCard(25 + cardWidth + 5, currentY, "Grading Scale", `${scale} Points`);
-
-    currentY += cardHeight + 20;
-
-    // --- DETAILED BREAKDOWN ---
+    // --- ACADEMIC HISTORY ---
     doc.setFontSize(18);
     doc.setFont("times", "bold");
     doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.text("ACADEMIC BREAKDOWN", 25, currentY);
+    doc.text("ACADEMIC HISTORY", 25, currentY);
 
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
     doc.setLineWidth(1);
-    doc.line(25, currentY + 3, 100, currentY + 3);
+    doc.line(25, currentY + 3, 90, currentY + 3);
 
     currentY += 15;
 
     filteredData.forEach((year) => {
+      // Check page overflow
       if (currentY > pageHeight - 40) {
         doc.addPage();
-        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.rect(0, 0, 10, pageHeight, 'F');
+        drawGeometricBackground();
         currentY = 30;
       }
+
+      // Year Header
+      doc.setFillColor(243, 244, 246);
+      doc.rect(25, currentY - 5, pageWidth - 50, 10, 'F');
 
       doc.setFont("times", "bold");
       doc.setFontSize(14);
       doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.text(year.name.toUpperCase(), 25, currentY);
-      currentY += 8;
+      doc.text(year.name.toUpperCase(), 30, currentY + 2);
+
+      currentY += 15;
 
       year.semesters.forEach((sem) => {
         const stats = calculateSemesterStats(sem.courses, scale);
+        const semRGB = getGradeColorRGB(stats.gpa, scale);
 
+        // Check page overflow before semester
         if (currentY > pageHeight - 50) {
           doc.addPage();
-          doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-          doc.rect(0, 0, 10, pageHeight, 'F');
+          drawGeometricBackground();
           currentY = 30;
         }
 
+        // Semester Header with dynamic pill
         doc.setFont("times", "bold");
-        doc.setFontSize(11);
+        doc.setFontSize(12);
         doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-        doc.text(`${sem.name} `, 25, currentY + 6);
+        doc.text(sem.name, 25, currentY);
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-        const gpaText = `(GPA: ${stats.gpa.toFixed(2)})`;
-        doc.text(gpaText, 25 + doc.getTextWidth(sem.name) + 5, currentY + 6);
+        // GPA Pill
+        const pillText = `GPA: ${stats.gpa.toFixed(2)}`;
+        const pillW = doc.getTextWidth(pillText) + 6;
+        doc.setFillColor(semRGB[0], semRGB[1], semRGB[2]);
+        doc.roundedRect(25 + doc.getTextWidth(sem.name) + 5, currentY - 4.5, pillW, 6, 1, 1, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.text(pillText, 25 + doc.getTextWidth(sem.name) + 8, currentY - 0.5);
 
-        currentY += 10;
+        currentY += 6;
 
         const tableBody = sem.courses
           .filter(c => (Number(c.unit) || 0) > 0)
-          .map((course, index) => {
-            const points = (Number(course.unit) || 0) * getGradeValue(course.grade, scale);
-            return [
-              index + 1,
-              course.code.toUpperCase() || '-',
-              course.title || '-',
-              course.unit,
-              course.grade,
-              points.toFixed(1)
-            ];
-          });
+          .map((course, index) => [
+            index + 1,
+            course.code.toUpperCase() || '-',
+            course.title || '-',
+            course.unit,
+            course.grade,
+            ((Number(course.unit) || 0) * getGradeValue(course.grade, scale)).toFixed(1)
+          ]);
 
         autoTable(doc, {
           startY: currentY,
-          head: [['#', 'CODE', 'COURSE TITLE', 'UNIT', 'GRADE', 'PTS']],
+          head: [['#', 'CODE', 'COURSE TITLE', 'UNIT', 'GR', 'PTS']],
           body: tableBody,
-          theme: 'grid',
+          theme: 'striped',
           margin: { left: 25 },
           headStyles: {
             fillColor: primaryColor,
@@ -461,46 +502,44 @@ function App() {
             halign: 'left',
           },
           bodyStyles: {
-            textColor: 50,
-            lineColor: [243, 244, 246],
-            lineWidth: 0.1,
+            textColor: 60,
+            fontSize: 7,
           },
           alternateRowStyles: {
-            fillColor: [249, 250, 251]
+            fillColor: [252, 253, 254]
           },
           columnStyles: {
-            0: { cellWidth: 10, halign: 'center', textColor: 150 },
-            1: { cellWidth: 25, fontStyle: 'bold' },
+            0: { cellWidth: 8, halign: 'center', textColor: 160 },
+            1: { cellWidth: 20, fontStyle: 'bold' },
             2: { cellWidth: 'auto' },
-            3: { cellWidth: 15, halign: 'center' },
-            4: { cellWidth: 15, halign: 'center', fontStyle: 'bold', textColor: primaryColor },
-            5: { cellWidth: 15, halign: 'right' }
+            3: { cellWidth: 12, halign: 'center' },
+            4: { cellWidth: 12, halign: 'center', fontStyle: 'bold', textColor: accentColor },
+            5: { cellWidth: 12, halign: 'right' }
           },
           styles: {
             font: "helvetica",
-            fontSize: 8,
-            cellPadding: 3,
+            cellPadding: 2,
           }
         });
 
         // @ts-ignore
-        currentY = doc.lastAutoTable.finalY + 10;
+        currentY = doc.lastAutoTable.finalY + 12;
       });
 
       currentY += 5;
     });
 
-    // Page Numbers Footer
+    // Final Footer on all pages (except cover)
     const totalPages = doc.internal.pages.length - 1;
-    for (let i = 1; i <= totalPages; i++) {
-      if (i === 1) continue; // Skip cover page
+    for (let i = 2; i <= totalPages; i++) {
       doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(156, 163, 175);
-      doc.text(`Page ${i} of ${totalPages}`, pageWidth - 30, pageHeight - 10);
+      doc.setFontSize(7);
+      doc.setTextColor(180, 180, 180);
+      doc.text(`GPA Calculator Academic Report — Page ${i} of ${totalPages}`, 25, pageHeight - 10);
+      doc.text(`Confidential Generated Content`, pageWidth - 60, pageHeight - 10);
     }
 
-    doc.save("academic-report.pdf");
+    doc.save(`academic-report-${new Date().getTime()}.pdf`);
   };
 
   const addYear = () => {
