@@ -66,3 +66,22 @@ export const getClassOfDegree = (cgpa: number, scale: GradingScale): string => {
     return 'Fail';
   }
 };
+
+export const getGradeColor = (cgpa: number, scale: GradingScale): string => {
+  if (cgpa === 0) return 'text-gray-400 dark:text-gray-500';
+
+  if (scale === '5.0') {
+    if (cgpa >= 4.50) return 'text-emerald-600 dark:text-emerald-400';
+    if (cgpa >= 3.50) return 'text-blue-600 dark:text-blue-400';
+    if (cgpa >= 2.40) return 'text-amber-600 dark:text-amber-400';
+    if (cgpa >= 1.50) return 'text-violet-600 dark:text-violet-400';
+    if (cgpa >= 1.00) return 'text-gray-600 dark:text-gray-400';
+    return 'text-red-600 dark:text-red-400';
+  } else {
+    if (cgpa >= 3.50) return 'text-emerald-600 dark:text-emerald-400';
+    if (cgpa >= 3.00) return 'text-blue-600 dark:text-blue-400';
+    if (cgpa >= 2.00) return 'text-amber-600 dark:text-amber-400';
+    if (cgpa >= 1.00) return 'text-violet-600 dark:text-violet-400';
+    return 'text-red-600 dark:text-red-400';
+  }
+};

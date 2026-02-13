@@ -5,29 +5,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPA Calculator</title>
+  <meta name="description" content="Calculate your CGPA easily with this modern academic performance tracker." />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            display: ['Lexend', 'sans-serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
           },
           colors: {
-            primary: "#137fec",
-            "primary-dark": "#0b5bb0",
+            primary: "#10b981",
+            "primary-dark": "#059669",
+            "primary-light": "#d1fae5",
           }
         },
       },
     }
   </script>
   <style>
-    /* Custom Scrollbar */
+    * {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
     ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 4px;
+      height: 4px;
     }
 
     ::-webkit-scrollbar-track {
@@ -35,21 +41,46 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
+      background: #d1d5db;
+      border-radius: 99px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
+      background: #9ca3af;
     }
 
-    body {
-      font-family: 'Lexend', sans-serif;
+    .dark ::-webkit-scrollbar-thumb {
+      background: #4b5563;
+    }
+
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #6b7280;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
     }
   </style>
 </head>
 
-<body class="bg-[#f3f4f6] text-[#1f2937] overflow-hidden">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden transition-colors">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

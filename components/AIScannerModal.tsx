@@ -232,17 +232,17 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="bg-white w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh]">
+      <div className="bg-white dark:bg-gray-800 w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh] transition-colors">
 
         {/* Header — clean and minimal */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-base font-bold text-gray-900">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
             {step === 'review' ? 'Review Courses' : 'Scan Document'}
           </h2>
-          <button onClick={handleClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={handleClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -253,25 +253,25 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
           {/* Semester Selector — always visible at top */}
           {step !== 'scanning' && (
             <div className="px-5 pt-4 pb-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Import to</label>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wide mb-1.5 block">Import to</label>
               <div className="relative">
                 <select
                   value={selectedSemesterId}
                   onChange={(e) => setSelectedSemesterId(e.target.value)}
-                  className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                  className="w-full appearance-none bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 >
                   {semesters.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
               </div>
             </div>
           )}
 
           {/* Error */}
           {error && (
-            <div className="mx-5 mt-3 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-start gap-2">
+            <div className="mx-5 mt-3 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-start gap-2">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -280,20 +280,20 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
           {/* STEP: Upload */}
           {step === 'upload' && !isCameraActive && (
             <div className="px-5 py-4">
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Upload a result sheet, course form, or transcript. AI will extract the courses.
               </p>
 
               {/* Upload area */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-200 rounded-xl p-8 hover:border-primary/40 hover:bg-blue-50/30 transition-all cursor-pointer flex flex-col items-center text-center"
+                className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 hover:border-primary/40 dark:hover:border-primary/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-all cursor-pointer flex flex-col items-center text-center"
               >
-                <div className="size-12 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mb-3">
+                <div className="size-12 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center mb-3">
                   <Upload size={22} />
                 </div>
-                <p className="text-sm font-medium text-gray-700">Tap to upload file</p>
-                <p className="text-xs text-gray-400 mt-1">JPG, PNG, or PDF</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Tap to upload file</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, or PDF</p>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -306,7 +306,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
               {/* Camera button */}
               <button
                 onClick={startCamera}
-                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <Camera size={16} />
                 Use Camera
@@ -330,7 +330,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
               <div className="flex gap-2">
                 <button
                   onClick={stopCamera}
-                  className="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>
@@ -351,8 +351,8 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
               <div className="mb-6">
                 <Loader2 size={36} className="text-primary animate-spin" />
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1">Analyzing document...</h3>
-              <p className="text-sm text-gray-400">This usually takes a few seconds</p>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">Analyzing document...</h3>
+              <p className="text-sm text-gray-400 dark:text-gray-500">This usually takes a few seconds</p>
             </div>
           )}
 
@@ -362,33 +362,34 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
               {/* Summary */}
               <div className="flex items-center gap-2 mb-4">
-                <div className="size-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                <div className="size-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Check size={14} />
                 </div>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {extractedCourses.length} course{extractedCourses.length !== 1 ? 's' : ''} found
                 </span>
               </div>
 
-              {/* Editable course list — card-based for mobile */}
+              {/* Editable course list — card-based for review */}
               <div className="space-y-2 mb-4 max-h-[45vh] overflow-y-auto pr-1">
                 {extractedCourses.map((c, index) => (
-                  <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100 group">
+                  <div key={c.id} className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 border border-gray-100 dark:border-gray-700 transition-colors group">
                     {/* Top row: Code + Delete */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-[10px] font-bold text-gray-400 w-5 shrink-0">{index + 1}</span>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 w-5 shrink-0">{index + 1}</span>
                         <input
                           type="text"
                           value={c.code}
                           onChange={(e) => updateCourse(c.id, 'code', e.target.value)}
-                          className="text-sm font-bold text-gray-900 bg-transparent border-none outline-none w-full uppercase placeholder:text-gray-300 placeholder:normal-case"
+                          onFocus={(e) => e.target.select()}
+                          className="text-sm font-bold text-gray-900 dark:text-gray-100 bg-transparent border-none outline-none w-full uppercase placeholder:text-gray-300 dark:placeholder:text-gray-600 placeholder:normal-case"
                           placeholder="Course code"
                         />
                       </div>
                       <button
                         onClick={() => removeCourse(c.id)}
-                        className="p-1 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
+                        className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -398,27 +399,29 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
                       type="text"
                       value={c.title}
                       onChange={(e) => updateCourse(c.id, 'title', e.target.value)}
-                      className="text-xs text-gray-500 bg-transparent border-none outline-none w-full mb-2 placeholder:text-gray-300"
+                      onFocus={(e) => e.target.select()}
+                      className="text-xs text-gray-500 dark:text-gray-400 bg-transparent border-none outline-none w-full mb-2 placeholder:text-gray-300 dark:placeholder:text-gray-600"
                       placeholder="Course title (optional)"
                     />
                     {/* Bottom row: Units + Grade */}
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-gray-400 font-medium">Units</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Units</span>
                         <input
                           type="number"
                           min="0"
                           value={c.unit || ''}
                           onChange={(e) => updateCourse(c.id, 'unit', parseInt(e.target.value) || 0)}
-                          className="w-12 text-sm text-center font-medium text-gray-800 bg-white border border-gray-200 rounded-md py-1 outline-none focus:ring-1 focus:ring-primary/30"
+                          onFocus={(e) => e.target.select()}
+                          className="w-12 text-sm text-center font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-gray-400 font-medium">Grade</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Grade</span>
                         <select
                           value={c.grade}
-                          onChange={(e) => updateCourse(c.id, 'grade', e.target.value)}
-                          className="text-sm font-bold text-gray-800 bg-white border border-gray-200 rounded-md py-1 px-2 outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer"
+                          onChange={(e) => updateCourse(c.id, 'grade', e.target.value as GradeLetter)}
+                          className="text-sm font-bold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 px-2 outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer transition-colors"
                         >
                           <option value="A">A</option>
                           <option value="B">B</option>
@@ -433,7 +436,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
                 ))}
 
                 {extractedCourses.length === 0 && (
-                  <div className="py-8 text-center text-gray-400 text-sm">
+                  <div className="py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
                     No courses yet. Add one below.
                   </div>
                 )}
@@ -442,7 +445,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
               {/* Add Row */}
               <button
                 onClick={addEmptyRow}
-                className="w-full py-2 text-sm font-medium text-primary border border-dashed border-primary/30 rounded-lg hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5 mb-4"
+                className="w-full py-2 text-sm font-medium text-primary border border-dashed border-primary/30 dark:border-primary/20 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-1.5 mb-4"
               >
                 <Plus size={14} />
                 Add Course
@@ -453,10 +456,10 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
         {/* Footer actions */}
         {step === 'review' && (
-          <div className="px-5 py-4 border-t border-gray-100 flex gap-2 bg-white">
+          <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex gap-2 bg-white dark:bg-gray-800 rounded-b-2xl">
             <button
               onClick={reset}
-              className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               Scan Again
             </button>
