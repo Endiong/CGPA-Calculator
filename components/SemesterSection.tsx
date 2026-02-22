@@ -73,7 +73,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
               <table className="w-full text-left border-collapse min-w-[500px] md:min-w-full">
                 <thead>
                   <tr className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">
-                    <th className="px-3 md:px-4 py-2 w-10">#</th>
+                    <th className="px-3 md:px-4 py-2 w-10">S/N</th>
                     <th className="px-3 md:px-4 py-2 w-24 min-w-[80px]">Code</th>
                     <th className="px-3 md:px-4 py-2 min-w-[140px]">Title</th>
                     <th className="px-3 md:px-4 py-2 w-16 text-center">Units</th>

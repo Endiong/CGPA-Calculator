@@ -40,9 +40,11 @@ const GradingInfoModal: React.FC<GradingInfoModalProps> = ({ isOpen, onClose }) 
                 {GRADE_OPTIONS.map((opt) => (
                   <div key={opt.letter} className="flex flex-col items-center bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2 border border-gray-100 dark:border-gray-700">
                     <span className={`text-lg font-black mb-1 ${opt.letter === 'A' ? 'text-emerald-500' :
-                      opt.letter === 'B' ? 'text-blue-500' :
+                      opt.letter === 'B' ? 'text-teal-500' :
                         opt.letter === 'C' ? 'text-amber-500' :
-                          opt.letter === 'F' ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
+                          opt.letter === 'D' ? 'text-orange-500' :
+                            opt.letter === 'E' ? 'text-rose-500' :
+                              'text-red-600'
                       }`}>{opt.letter}</span>
                     <div className="flex flex-col items-center gap-0.5 w-full">
                       <span className="text-[10px] uppercase text-gray-400 font-bold">5.0</span>
@@ -81,16 +83,16 @@ const GradingInfoModal: React.FC<GradingInfoModalProps> = ({ isOpen, onClose }) 
               <div className="space-y-2">
                 {(activeTab === '5.0' ? [
                   ['4.50 – 5.00', 'First Class', 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30'],
-                  ['3.50 – 4.49', '2nd Class Upper', 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30'],
+                  ['3.50 – 4.49', '2nd Class Upper', 'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-900/30'],
                   ['2.40 – 3.49', '2nd Class Lower', 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30'],
-                  ['1.50 – 2.39', 'Third Class', 'bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-900/30'],
-                  ['1.00 – 1.49', 'Pass', 'bg-gray-50 text-gray-500 border-gray-100 dark:bg-gray-800/50 dark:text-gray-500 dark:border-gray-700'],
+                  ['1.50 – 2.39', 'Third Class', 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30'],
+                  ['1.00 – 1.49', 'Pass', 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-900/30'],
                   ['0.00 – 0.99', 'Fail', 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'],
                 ] : [
                   ['3.50 – 4.00', 'First Class', 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30'],
-                  ['3.00 – 3.49', '2nd Class Upper', 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30'],
+                  ['3.00 – 3.49', '2nd Class Upper', 'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-900/30'],
                   ['2.00 – 2.99', '2nd Class Lower', 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30'],
-                  ['1.00 – 1.99', 'Third Class', 'bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-900/30'],
+                  ['1.00 – 1.99', 'Third Class', 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30'],
                   ['0.00 – 0.99', 'Fail', 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'],
                 ]).map(([range, cls, style]) => (
                   <div key={range} className={`flex items-center justify-between p-3 rounded-lg border ${style}`}>

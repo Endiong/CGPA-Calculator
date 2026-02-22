@@ -11,6 +11,7 @@ import GradingInfoModal from './components/GradingInfoModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import AIScannerModal from './components/AIScannerModal';
 import SettingsModal from './components/SettingsModal';
+import Grainient from './components/Grainient';
 
 function App() {
   // State initialization with localStorage check
@@ -339,11 +340,11 @@ function App() {
     // --- COVER PAGE ---
     drawGeometricBackground(true);
 
-    // Header Logo/Text
-    doc.setTextColor(darkText[0], darkText[1], darkText[2]);
-    doc.setFont("times", "bolditalic");
-    doc.setFontSize(16);
-    doc.text("Antigravity GPA", 30, 40);
+    // Header
+    doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("GPA Calculator", 30, 40);
 
     // Title Section
     const titleY = pageHeight / 3;
@@ -491,7 +492,7 @@ function App() {
 
         autoTable(doc, {
           startY: currentY,
-          head: [['#', 'CODE', 'COURSE TITLE', 'UNIT', 'GR', 'PTS']],
+          head: [['S/N', 'CODE', 'COURSE TITLE', 'UNIT', 'GR', 'PTS']],
           body: tableBody,
           theme: 'striped',
           margin: { left: 25 },
@@ -513,7 +514,7 @@ function App() {
             1: { cellWidth: 20, fontStyle: 'bold' },
             2: { cellWidth: 'auto' },
             3: { cellWidth: 12, halign: 'center' },
-            4: { cellWidth: 12, halign: 'center', fontStyle: 'bold', textColor: accentColor },
+            4: { cellWidth: 12, halign: 'center', fontStyle: 'bold', textColor: semRGB },
             5: { cellWidth: 12, halign: 'right' }
           },
           styles: {
@@ -535,8 +536,8 @@ function App() {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(180, 180, 180);
-      doc.text(`GPA Calculator Academic Report — Page ${i} of ${totalPages}`, 25, pageHeight - 10);
-      doc.text(`Confidential Generated Content`, pageWidth - 60, pageHeight - 10);
+      doc.text(`Academic Report — Page ${i} of ${totalPages}`, 25, pageHeight - 10);
+      doc.text(`Generated ${new Date().toLocaleDateString()}`, pageWidth - 60, pageHeight - 10);
     }
 
     doc.save(`academic-report-${new Date().getTime()}.pdf`);
@@ -712,11 +713,35 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto relative">
+        <Grainient
+          color1="#FF9FFC"
+          color2="#5227FF"
+          color3="#B19EEF"
+          timeSpeed={0.25}
+          colorBalance={0}
+          warpStrength={1}
+          warpFrequency={5}
+          warpSpeed={2}
+          warpAmplitude={50}
+          blendAngle={0}
+          blendSoftness={0.05}
+          rotationAmount={500}
+          noiseScale={2}
+          grainAmount={0.1}
+          grainScale={2}
+          grainAnimated={false}
+          contrast={1.5}
+          gamma={1}
+          saturation={1}
+          centerX={0}
+          centerY={0}
+          zoom={0.9}
+        />
         <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24">
 
           {/* Year Tabs — pill style */}
-          <div className="sticky top-0 bg-gray-50 dark:bg-gray-900 z-10 pt-4 pb-3 transition-colors">
+          <div className="sticky top-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 pt-4 pb-3 transition-colors">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               {data.map((year, index) => (
                 <button
@@ -832,6 +857,7 @@ function App() {
         onClose={() => setIsAIModalOpen(false)}
         onImport={handleAIImport}
         semesters={activeYear.semesters}
+        viewMode={viewMode}
       />
 
       <SettingsModal

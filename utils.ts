@@ -72,16 +72,16 @@ export const getGradeColor = (cgpa: number, scale: GradingScale): string => {
 
   if (scale === '5.0') {
     if (cgpa >= 4.50) return 'text-emerald-600 dark:text-emerald-400';
-    if (cgpa >= 3.50) return 'text-blue-600 dark:text-blue-400';
+    if (cgpa >= 3.50) return 'text-teal-600 dark:text-teal-400';
     if (cgpa >= 2.40) return 'text-amber-600 dark:text-amber-400';
-    if (cgpa >= 1.50) return 'text-violet-600 dark:text-violet-400';
-    if (cgpa >= 1.00) return 'text-gray-600 dark:text-gray-400';
+    if (cgpa >= 1.50) return 'text-orange-600 dark:text-orange-400';
+    if (cgpa >= 1.00) return 'text-rose-600 dark:text-rose-400';
     return 'text-red-600 dark:text-red-400';
   } else {
     if (cgpa >= 3.50) return 'text-emerald-600 dark:text-emerald-400';
-    if (cgpa >= 3.00) return 'text-blue-600 dark:text-blue-400';
+    if (cgpa >= 3.00) return 'text-teal-600 dark:text-teal-400';
     if (cgpa >= 2.00) return 'text-amber-600 dark:text-amber-400';
-    if (cgpa >= 1.00) return 'text-violet-600 dark:text-violet-400';
+    if (cgpa >= 1.00) return 'text-orange-600 dark:text-orange-400';
     return 'text-red-600 dark:text-red-400';
   }
 };
@@ -90,17 +90,17 @@ export const getGradeColorRGB = (cgpa: number, scale: GradingScale): [number, nu
   if (cgpa === 0) return [156, 163, 175]; // Gray 400
 
   if (scale === '5.0') {
-    if (cgpa >= 4.50) return [5, 150, 105]; // Emerald 600
-    if (cgpa >= 3.50) return [37, 99, 235]; // Blue 600
-    if (cgpa >= 2.40) return [217, 119, 6];  // Amber 600
-    if (cgpa >= 1.50) return [124, 58, 237]; // Violet 600
-    if (cgpa >= 1.00) return [75, 85, 99];   // Gray 600
+    if (cgpa >= 4.50) return [5, 150, 105];   // Emerald 600
+    if (cgpa >= 3.50) return [13, 148, 136];   // Teal 600
+    if (cgpa >= 2.40) return [217, 119, 6];    // Amber 600
+    if (cgpa >= 1.50) return [234, 88, 12];    // Orange 600
+    if (cgpa >= 1.00) return [225, 29, 72];    // Rose 600
     return [220, 38, 38]; // Red 600
   } else {
-    if (cgpa >= 3.50) return [5, 150, 105]; // Emerald 600
-    if (cgpa >= 3.00) return [37, 99, 235]; // Blue 600
-    if (cgpa >= 2.00) return [217, 119, 6];  // Amber 600
-    if (cgpa >= 1.00) return [124, 58, 237]; // Violet 600
+    if (cgpa >= 3.50) return [5, 150, 105];    // Emerald 600
+    if (cgpa >= 3.00) return [13, 148, 136];   // Teal 600
+    if (cgpa >= 2.00) return [217, 119, 6];    // Amber 600
+    if (cgpa >= 1.00) return [234, 88, 12];    // Orange 600
     return [220, 38, 38]; // Red 600
   }
 };
