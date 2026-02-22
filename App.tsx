@@ -653,6 +653,30 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 transition-colors">
+      <Grainient
+        color1="#FF6B35"
+        color2="#FF1493"
+        color3="#7B2FFF"
+        timeSpeed={0.2}
+        colorBalance={0}
+        warpStrength={1}
+        warpFrequency={4}
+        warpSpeed={1.5}
+        warpAmplitude={40}
+        blendAngle={0}
+        blendSoftness={0.1}
+        rotationAmount={400}
+        noiseScale={2}
+        grainAmount={0.15}
+        grainScale={2}
+        grainAnimated={false}
+        contrast={1.6}
+        gamma={1}
+        saturation={1.3}
+        centerX={0}
+        centerY={0}
+        zoom={0.9}
+      />
       {/* Header */}
       <header className="flex-none bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-3 z-20 transition-colors">
         <div className="max-w-[960px] mx-auto flex items-center justify-between">
@@ -713,31 +737,7 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative">
-        <Grainient
-          color1="#FF9FFC"
-          color2="#5227FF"
-          color3="#B19EEF"
-          timeSpeed={0.25}
-          colorBalance={0}
-          warpStrength={1}
-          warpFrequency={5}
-          warpSpeed={2}
-          warpAmplitude={50}
-          blendAngle={0}
-          blendSoftness={0.05}
-          rotationAmount={500}
-          noiseScale={2}
-          grainAmount={0.1}
-          grainScale={2}
-          grainAnimated={false}
-          contrast={1.5}
-          gamma={1}
-          saturation={1}
-          centerX={0}
-          centerY={0}
-          zoom={0.9}
-        />
+      <main className="flex-1 overflow-y-auto">
         <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24">
 
           {/* Year Tabs — pill style */}

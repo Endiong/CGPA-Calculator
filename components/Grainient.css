@@ -1,17 +1,12 @@
 .grainient-container {
     position: fixed;
     left: 0;
-    top: 0;
+    bottom: 0;
     width: 100vw;
-    height: 100vh;
+    height: 50vh;
     overflow: hidden;
     pointer-events: none;
     z-index: 1;
-    opacity: 0.07;
-}
-
-/* Hide or make very subtle in dark mode */
-:root.dark .grainient-container,
-.dark .grainient-container {
-    opacity: 0.02;
+    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0) 100%);
+    mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0) 100%);
 }
