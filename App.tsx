@@ -652,7 +652,7 @@ function App() {
   const overallStats = calculateOverallStats(data, scale);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-50/50 dark:bg-gray-900/50 transition-colors">
       <Grainient
         color1="#FF6B35"
         color2="#FF1493"
@@ -678,7 +678,7 @@ function App() {
         zoom={0.9}
       />
       {/* Header */}
-      <header className="flex-none bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-3 z-20 transition-colors">
+      <header className="flex-none bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/80 px-4 sm:px-6 py-3 z-20 transition-colors">
         <div className="max-w-[960px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -741,7 +741,7 @@ function App() {
         <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24">
 
           {/* Year Tabs — pill style */}
-          <div className="sticky top-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 pt-4 pb-3 transition-colors">
+          <div className="sticky top-0 bg-gray-50/60 dark:bg-gray-900/60 backdrop-blur-md z-10 pt-4 pb-3 transition-colors">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               {data.map((year, index) => (
                 <button

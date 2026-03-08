@@ -30,7 +30,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
   const bgColorClass = colorClass.replace('text-', 'bg-').replace('dark:text-', 'dark:bg-').replace('600', '50').replace('400', '900/30');
 
   return (
-    <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
+    <div className="rounded-xl bg-white dark:bg-gray-800 backdrop-blur-md border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
       {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3.5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700"

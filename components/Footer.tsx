@@ -15,7 +15,7 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
   const colorClass = getGradeColor(cgpa, scale);
 
   return (
-    <footer className="flex-none fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-700 z-30 transition-colors">
+    <footer className="flex-none fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-100/80 dark:border-gray-700/80 z-30 transition-colors">
       <div className="max-w-[960px] mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
 
