@@ -32,7 +32,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
   const emptyBadge = stats.totalUnits === 0;
 
   return (
-    <div className="rounded-xl bg-white dark:bg-[#141420] backdrop-blur-md border border-gray-100 dark:border-gray-700/40 overflow-hidden transition-colors shadow-lg dark:shadow-black/40">
+    <div className="rounded-xl bg-white/80 dark:bg-[#141420]/80 backdrop-blur-xl overflow-hidden transition-colors shadow-lg shadow-black/5 dark:shadow-black/40">
       {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3.5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50"
@@ -80,7 +80,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[500px] md:min-w-full">
                 <thead>
-                  <tr className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">
+                  <tr className="bg-gray-50/60 dark:bg-gray-800/50 border-b border-gray-100/80 dark:border-gray-700 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">
                     <th className="px-3 md:px-4 py-2 w-10">S/N</th>
                     <th className="px-3 md:px-4 py-2 w-24 min-w-[80px]">Code</th>
                     <th className="px-3 md:px-4 py-2 min-w-[140px]">Title</th>
@@ -137,7 +137,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
           <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-700/50">
             <button
               onClick={() => onAddCourse(semester.id)}
-              className="flex items-center justify-center w-full py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 transition-all gap-1.5"
+              className="flex items-center justify-center w-full py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 rounded-lg transition-all gap-1.5"
             >
               <Plus size={14} />
               Add Course

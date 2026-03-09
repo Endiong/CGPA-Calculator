@@ -16,7 +16,7 @@ const GradingInfoModal: React.FC<GradingInfoModalProps> = ({ isOpen, onClose }) 
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="bg-white dark:bg-[#1a1a24] w-full sm:rounded-2xl sm:max-w-md sm:mx-4 rounded-t-2xl shadow-xl relative z-10 flex flex-col max-h-[85vh] transition-colors overflow-hidden">
+      <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-md sm:mx-4 rounded-t-2xl shadow-xl relative z-10 flex flex-col max-h-[85vh] transition-colors overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50 bg-white/50 dark:bg-[#1a1a24]/50 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-2">

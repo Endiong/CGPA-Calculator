@@ -44,7 +44,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div className="absolute inset-0" onClick={onClose} />
             <div
-                className="bg-white dark:bg-[#1a1a24] rounded-xl shadow-2xl max-w-md w-full overflow-hidden relative z-10 transition-colors"
+                className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl rounded-xl shadow-2xl max-w-md w-full overflow-hidden relative z-10 transition-colors"
                 role="dialog"
                 aria-modal="true"
             >

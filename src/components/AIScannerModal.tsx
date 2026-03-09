@@ -284,7 +284,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="bg-white dark:bg-[#1a1a24] w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh] transition-colors">
+      <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh] transition-colors">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
@@ -380,38 +380,57 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
           {step === 'scanning' && (
             <div className="flex flex-col items-center justify-center py-14 px-5">
               <style>{`
-                @keyframes material-progress {
-                  0% { transform: translateX(-100%) scaleX(0.1); }
-                  25% { transform: translateX(-30%) scaleX(0.4); }
-                  50% { transform: translateX(40%) scaleX(0.5); }
-                  75% { transform: translateX(80%) scaleX(0.4); }
-                  100% { transform: translateX(100%) scaleX(0.1); }
+                @keyframes m3-spinner-rotate {
+                  100% { transform: rotate(360deg); }
                 }
-                @keyframes material-progress-2 {
-                  0% { transform: translateX(-200%) scaleX(0.1); }
-                  35% { transform: translateX(-50%) scaleX(0.6); }
-                  70% { transform: translateX(50%) scaleX(0.5); }
-                  100% { transform: translateX(150%) scaleX(0.1); }
+                @keyframes m3-spinner-dash {
+                  0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                  50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                  100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
                 }
-                @keyframes scanner-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+                @keyframes m3-pulse {
+                  0%, 100% { opacity: 0.4; }
+                  50% { opacity: 1; }
+                }
               `}</style>
 
-              <div className="mb-6" style={{ animation: 'scanner-float 2s ease-in-out infinite' }}>
-                <div className="size-16 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-gray-700 dark:text-gray-300">
-                    <path d="M4 18H32M4 10H16M4 26H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    <circle cx="26" cy="26" r="6" stroke="currentColor" strokeWidth="2" />
-                    <path d="M23 26l2 2 3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
+              {/* M3 Circular Indeterminate Spinner */}
+              <div className="mb-8 relative">
+                <svg
+                  width="56"
+                  height="56"
+                  viewBox="0 0 50 50"
+                  style={{ animation: 'm3-spinner-rotate 2s linear infinite' }}
+                >
+                  {/* Track */}
+                  <circle
+                    cx="25" cy="25" r="20"
+                    fill="none"
+                    strokeWidth="4"
+                    className="stroke-gray-200 dark:stroke-gray-700"
+                  />
+                  {/* Active indicator */}
+                  <circle
+                    cx="25" cy="25" r="20"
+                    fill="none"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    className="stroke-gray-800 dark:stroke-white"
+                    style={{
+                      animation: 'm3-spinner-dash 1.5s ease-in-out infinite',
+                    }}
+                  />
+                </svg>
               </div>
 
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">Analyzing document...</h3>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mb-8">AI is reading your document. This usually takes a few seconds.</p>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">Analyzing document</h3>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mb-6">AI is reading your document</p>
 
-              <div className="w-full max-w-xs h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
-                <div className="absolute inset-y-0 left-0 w-full bg-gray-800 dark:bg-white rounded-full" style={{ animation: 'material-progress 1.8s cubic-bezier(0.4,0,0.2,1) infinite', transformOrigin: 'left center' }} />
-                <div className="absolute inset-y-0 left-0 w-full bg-gray-600 dark:bg-gray-300 rounded-full" style={{ animation: 'material-progress-2 1.8s cubic-bezier(0.4,0,0.2,1) 0.3s infinite', transformOrigin: 'left center' }} />
+              {/* Subtle animated dots */}
+              <div className="flex items-center gap-1.5">
+                <div className="size-1.5 rounded-full bg-gray-400 dark:bg-gray-500" style={{ animation: 'm3-pulse 1.4s ease-in-out infinite' }} />
+                <div className="size-1.5 rounded-full bg-gray-400 dark:bg-gray-500" style={{ animation: 'm3-pulse 1.4s ease-in-out 0.2s infinite' }} />
+                <div className="size-1.5 rounded-full bg-gray-400 dark:bg-gray-500" style={{ animation: 'm3-pulse 1.4s ease-in-out 0.4s infinite' }} />
               </div>
             </div>
           )}
@@ -518,7 +537,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
         {/* Footer Actions */}
         {step === 'review' && (
-          <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex gap-2 bg-white dark:bg-[#1a1a24] rounded-b-2xl">
+          <div className="px-5 py-4 border-t border-gray-100/80 dark:border-gray-700/50 flex gap-2 bg-white/80 dark:bg-[#1a1a24]/80 backdrop-blur-md rounded-b-2xl">
             <button onClick={reset} className="flex-1 py-2.5 text-sm font-medium text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
               Scan Again
             </button>

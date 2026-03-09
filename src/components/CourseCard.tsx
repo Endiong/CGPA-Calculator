@@ -16,7 +16,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ index, course, scale, onChange,
     const points = (Number(course.unit) || 0) * getGradeValue(course.grade, scale);
 
     return (
-        <div className="group bg-white dark:bg-[#1a1a24] p-4 rounded-xl border border-gray-100 dark:border-gray-700/40 shadow-sm transition-all hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600">
+        <div className="group bg-white/70 dark:bg-[#1a1a24]/70 backdrop-blur-lg p-4 rounded-xl shadow-sm transition-all hover:shadow-md hover:bg-white/90 dark:hover:bg-[#1a1a24]/90">
 
             {/* Top Row: Code, Title, Delete */}
             <div className="flex items-start justify-between gap-3 mb-3">

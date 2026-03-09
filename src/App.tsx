@@ -651,7 +651,7 @@ function App() {
         />
       )}
       {/* Header */}
-      <header className="flex-none bg-white/80 dark:bg-[#1a1a24]/90 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-3 z-30 transition-colors relative">
+      <header className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-3 z-30 transition-colors relative">
         <div className="max-w-[960px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="size-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
@@ -709,7 +709,7 @@ function App() {
       </header>
 
       {/* Year Tabs — fixed bar between header and scrollable content */}
-      <div className="flex-none bg-white/90 dark:bg-[#0d0d14]/95 backdrop-blur-sm border-b border-gray-100/50 dark:border-gray-800/50 px-4 sm:px-6 py-2.5 z-20 transition-colors">
+      <div className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-2.5 z-20 transition-colors">
         <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
           {data.map((year, index) => (
             <button
@@ -736,7 +736,7 @@ function App() {
           ))}
           <button
             onClick={addYear}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/80 dark:bg-[#1a1a24]/80 border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm whitespace-nowrap transition-all"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/60 dark:bg-[#1a1a24]/60 backdrop-blur-sm shadow-sm whitespace-nowrap transition-all"
           >
             <Plus size={12} />
             Add Year
@@ -790,7 +790,7 @@ function App() {
               <div className="flex justify-center pt-4 pb-6 relative z-10">
                 <button
                   onClick={() => addSemester(activeYear.id)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/80 dark:bg-[#1a1a24]/80 border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/60 dark:bg-[#1a1a24]/60 backdrop-blur-lg shadow-sm hover:shadow-md transition-all"
                 >
                   <Plus size={14} />
                   Add Semester
