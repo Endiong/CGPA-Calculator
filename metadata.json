@@ -1,7 +1,4 @@
 {
-  "name": "GPA Calculator",
-  "description": "A professional, offline-capable cGPA and GPA calculator supporting both 4.0 and 5.0 grading scales with persistent storage.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "name": "CGPA Calculator",
+  "description": "A modern, offline-capable CGPA and GPA calculator supporting both 4.0 and 5.0 grading scales with persistent storage, PDF export, and AI document scanning."
 }
