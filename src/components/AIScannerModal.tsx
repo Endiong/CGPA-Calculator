@@ -233,8 +233,15 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
   // Effects
   useEffect(() => {
-    if (isOpen && semesters.length > 0 && !selectedSemesterId) setSelectedSemesterId(semesters[0].id);
-  }, [semesters, isOpen]);
+    if (!isOpen) return;
+
+    // Ensure we have a valid semester selected.
+    // If current selectedSemesterId is not in the list (e.g. was deleted), default to the first one.
+    const isValid = semesters.some(s => s.id === selectedSemesterId);
+    if (!isValid && semesters.length > 0) {
+      setSelectedSemesterId(semesters[0].id);
+    }
+  }, [semesters, isOpen, selectedSemesterId]);
 
   useEffect(() => () => { stopCamera(); }, []);
 
