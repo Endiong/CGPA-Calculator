@@ -46,7 +46,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ index, course, scale, onChange,
 
                 <button
                     onClick={() => onDelete(course.id)}
-                    className="flex-none p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100" // Always visible on mobile if needed, or maintain hover behavior
+                    className="flex-none p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                     <Trash2 size={16} />
                 </button>

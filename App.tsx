@@ -13,6 +13,8 @@ import AIScannerModal from './components/AIScannerModal';
 import SettingsModal from './components/SettingsModal';
 import Grainient from './components/Grainient';
 
+const ORDINALS = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
+
 function App() {
   // State initialization with localStorage check
   const [data, setData] = useState<Year[]>(() => {
@@ -93,7 +95,6 @@ function App() {
     onConfirm: () => { },
   });
 
-
   // Persistence effects
   useEffect(() => {
     localStorage.setItem('gpa_data', JSON.stringify(data));
@@ -129,7 +130,6 @@ function App() {
       ...actionConfig,
     });
   };
-
 
   // Actions
   const createEmptyCourses = (count: number) =>
@@ -211,8 +211,7 @@ function App() {
       if (year.id !== yearId) return year;
 
       const newSemesterNumber = year.semesters.length + 1;
-      const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
-      const label = ordinals[newSemesterNumber - 1] || `${newSemesterNumber}th`;
+      const label = ORDINALS[newSemesterNumber - 1] || `${newSemesterNumber}th`;
       const semesterName = `${label} Semester`;
 
       return {
@@ -258,8 +257,7 @@ function App() {
 
           const renamedSemesters = filteredSemesters.map((sem, index) => {
             const num = index + 1;
-            const ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
-            const label = ordinals[num - 1] || `${num}th`;
+            const label = ORDINALS[num - 1] || `${num}th`;
             const name = `${label} Semester`;
             return { ...sem, name };
           });
