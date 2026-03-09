@@ -1,20 +1,98 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 📊 CGPA Calculator
 
-# Run and deploy your AI Studio app
+A modern, offline-capable CGPA and GPA calculator built with React and TypeScript. Supports both **4.0** and **5.0** grading scales with persistent local storage, PDF export, and AI-powered document scanning.
 
-This contains everything you need to run your app locally.
+## ✨ Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1_yT-v1wbyqDano4Skp-eEMj8FYmVT_8V
+- **Dual Grading Scales** — Switch between 4.0 and 5.0 point systems
+- **Multi-Year & Semester Tracking** — Organize courses across multiple academic years and semesters
+- **AI Document Scanner** — Scan result sheets using your camera and auto-populate courses via Gemini AI
+- **PDF Export** — Generate professionally styled Scholar Reports
+- **Dark Mode** — Full light/dark theme support
+- **Offline-Ready** — All data persists locally in your browser
+- **Year Exclusion** — Exclude specific years from CGPA calculation
+- **Table & Card Views** — Toggle between view modes for your courses
 
-## Run Locally
+## 🛠️ Tech Stack
 
-**Prerequisites:**  Node.js
+- **React 19** + **TypeScript**
+- **Vite** — Fast dev server and build tool
+- **Tailwind CSS** — Utility-first styling
+- **Lucide React** — Icon library
+- **jsPDF** — PDF generation
+- **Google Generative AI** — AI-powered document scanning
 
+## 🚀 Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18+)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Endiong/CGPA-Calculator.git
+cd CGPA-Calculator
+
+# Install dependencies
+npm install
+```
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+> **Note:** The AI Scanner feature requires a valid [Gemini API key](https://aistudio.google.com/apikey). The calculator works fully without it — only the document scanning feature is disabled.
+
+### Development
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+The output will be in the `dist/` directory, ready for deployment to any static hosting service (Vercel, Netlify, GitHub Pages, etc.).
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## 📁 Project Structure
+
+```
+├── App.tsx              # Main application component
+├── index.html           # Entry HTML file
+├── index.tsx            # React entry point
+├── constants.ts         # Default data and constants
+├── types.ts             # TypeScript type definitions
+├── utils.ts             # Utility functions (GPA calc, grading, etc.)
+├── vite.config.ts       # Vite configuration
+├── components/
+│   ├── AIScannerModal.tsx    # AI document scanner
+│   ├── ConfirmationModal.tsx # Confirmation dialogs
+│   ├── CourseCard.tsx        # Card view for courses
+│   ├── CourseRow.tsx         # Table row for courses
+│   ├── Footer.tsx            # Bottom bar with CGPA display
+│   ├── GradingInfoModal.tsx  # Grading scale reference
+│   ├── Grainient.tsx         # Animated gradient background
+│   ├── SemesterSection.tsx   # Semester container component
+│   └── SettingsModal.tsx     # Settings panel
+```
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
