@@ -15,7 +15,6 @@
     "jspdf-autotable": "3.8.2",
     "lucide-react": "^0.563.0",
     "ogl": "^1.0.11",
-    "pdfjs-dist": "^5.5.207",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

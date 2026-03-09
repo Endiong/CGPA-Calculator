@@ -102,71 +102,12 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const processFile = async (file: File) => {
+  const processFile = (file: File) => {
     const isImage = file.type.startsWith('image/');
-    const isPdf = file.type === 'application/pdf';
-    if (!isImage && !isPdf) {
-      setError('Please upload an image (JPG, PNG) or PDF.');
+    if (!isImage) {
+      setError('Please upload an image (JPG, PNG, or WebP).');
       return;
     }
-
-    if (isPdf) {
-      // Convert ALL PDF pages to one combined image using PDF.js
-      try {
-        setStep('scanning');
-        setError(null);
-        const pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-          'pdfjs-dist/build/pdf.worker.min.mjs',
-          import.meta.url
-        ).toString();
-
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const numPages = Math.min(pdf.numPages, 10); // cap at 10 pages
-
-        // Render each page to get dimensions and image data
-        const pageCanvases: HTMLCanvasElement[] = [];
-        let totalHeight = 0;
-        let maxWidth = 0;
-
-        for (let i = 1; i <= numPages; i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1.5 });
-          const cvs = document.createElement('canvas');
-          cvs.width = viewport.width;
-          cvs.height = viewport.height;
-          await page.render({ canvas: cvs, viewport } as any).promise;
-          pageCanvases.push(cvs);
-          totalHeight += viewport.height;
-          maxWidth = Math.max(maxWidth, viewport.width);
-        }
-
-        // Combine all pages into one tall canvas
-        const combined = document.createElement('canvas');
-        combined.width = maxWidth;
-        combined.height = totalHeight;
-        const ctx = combined.getContext('2d')!;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, maxWidth, totalHeight);
-        let yOffset = 0;
-        for (const pc of pageCanvases) {
-          ctx.drawImage(pc, 0, yOffset);
-          yOffset += pc.height;
-        }
-
-        const dataUrl = combined.toDataURL('image/jpeg', 0.85);
-        setImagePreview(dataUrl);
-        setStep('upload');
-        scanDocument(dataUrl.split(',')[1], 'image/jpeg');
-      } catch (err) {
-        console.error('PDF conversion error:', err);
-        setError('Could not read PDF. Try uploading an image instead.');
-        setStep('upload');
-      }
-      return;
-    }
-
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -388,7 +329,7 @@ Rules:
                   <Upload size={22} />
                 </div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Tap to upload file</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, or PDF</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, or WebP</p>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -463,9 +404,9 @@ Rules:
               <div className="mb-6" style={{ animation: 'scanner-float 2s ease-in-out infinite' }}>
                 <div className="size-16 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                   <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-gray-700 dark:text-gray-300">
-                    <path d="M4 18H32M4 10H16M4 26H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-                    <circle cx="26" cy="26" r="6" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M23 26l2 2 3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M4 18H32M4 10H16M4 26H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    <circle cx="26" cy="26" r="6" stroke="currentColor" strokeWidth="2" />
+                    <path d="M23 26l2 2 3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
