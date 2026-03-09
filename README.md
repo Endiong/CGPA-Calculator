@@ -20,7 +20,7 @@ A modern, offline-capable CGPA and GPA calculator built with React and TypeScrip
 - **Tailwind CSS** — Utility-first styling
 - **Lucide React** — Icon library
 - **jsPDF** — PDF generation
-- **Groq API** — AI-powered document scanning
+- **AI-powered Scanning** — Supports both **Google Gemini** and **Groq API**
 
 ## Getting Started
 
@@ -41,13 +41,19 @@ npm install
 
 ### Environment Variables
 
-Create a `.env.local` file in the root directory:
+Create a `.env.local` file in the root directory and add **one** of the following keys:
 
 ```env
+# Option 1: Using Gemini (Recommended)
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+
+# OR 
+
+# Option 2: Using Groq
 VITE_GROQ_API_KEY=your_groq_api_key_here
 ```
 
-> **Note:** The AI Scanner feature requires a valid [Groq API key](https://console.groq.com/keys). The calculator works fully without it — only the document scanning feature is disabled.
+> **Note:** The AI Scanner feature requires a valid API key from either [Google AI Studio](https://aistudio.google.com/apikey) or [Groq Console](https://console.groq.com/keys). The calculator works fully without it — only the document scanning feature is disabled.
 
 ### Development
 

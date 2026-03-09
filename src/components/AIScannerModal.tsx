@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, AlertCircle, Camera, Trash2, Plus, Check, ChevronDown } from 'lucide-react';
 import { Course, GradeLetter, Semester } from '../types';
 import { generateId } from '../utils';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ── Types ──
 interface AIScannerModalProps {
@@ -132,34 +133,60 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     setError(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-      if (!apiKey) throw new Error('Missing API Key. Add VITE_GROQ_API_KEY to your .env.local file.');
+      const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
 
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: API_MODEL,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: SCAN_PROMPT },
-              { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
-            ]
-          }],
-          temperature: 0.1,
-          max_tokens: 4096,
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `API error: ${response.status}`);
+      if (!geminiKey && !groqKey) {
+        throw new Error('Missing API Key. Add VITE_GEMINI_API_KEY or VITE_GROQ_API_KEY to your .env.local file.');
       }
 
-      const data = await response.json();
-      const rawText = data.choices?.[0]?.message?.content || '';
+      let rawText = '';
+
+      if (geminiKey) {
+        // Use Gemini
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        const result = await model.generateContent([
+          SCAN_PROMPT,
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType
+            }
+          }
+        ]);
+        
+        rawText = result.response.text();
+      } else {
+        // Use Groq
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: API_MODEL,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'text', text: SCAN_PROMPT },
+                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+              ]
+            }],
+            temperature: 0.1,
+            max_tokens: 4096,
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        rawText = data.choices?.[0]?.message?.content || '';
+      }
+
       if (!rawText) throw new Error('No data returned from AI.');
 
       // Parse response — handle both raw array and wrapped formats
@@ -192,7 +219,8 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
         msg = 'Network error — check your internet connection and try again.';
       } else if (msg.includes('API key') || msg.includes('API_KEY')) {
-        msg = 'API key issue. Make sure VITE_GROQ_API_KEY is set in your .env.local file.';
+        const provider = import.meta.env.VITE_GEMINI_API_KEY ? 'VITE_GEMINI_API_KEY' : 'VITE_GROQ_API_KEY';
+        msg = `API key issue. Make sure ${provider} is set in your .env.local file.`;
       }
       setError(msg);
       setStep('upload');
