@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, AlertCircle, Camera, Trash2, Plus, Check, ChevronDown } from 'lucide-react';
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Course, GradeLetter, Semester } from '../types';
 import { generateId } from '../utils';
 
@@ -103,13 +102,71 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf';
     if (!isImage && !isPdf) {
       setError('Please upload an image (JPG, PNG) or PDF.');
       return;
     }
+
+    if (isPdf) {
+      // Convert ALL PDF pages to one combined image using PDF.js
+      try {
+        setStep('scanning');
+        setError(null);
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+          'pdfjs-dist/build/pdf.worker.min.mjs',
+          import.meta.url
+        ).toString();
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const numPages = Math.min(pdf.numPages, 10); // cap at 10 pages
+
+        // Render each page to get dimensions and image data
+        const pageCanvases: HTMLCanvasElement[] = [];
+        let totalHeight = 0;
+        let maxWidth = 0;
+
+        for (let i = 1; i <= numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const cvs = document.createElement('canvas');
+          cvs.width = viewport.width;
+          cvs.height = viewport.height;
+          await page.render({ canvas: cvs, viewport } as any).promise;
+          pageCanvases.push(cvs);
+          totalHeight += viewport.height;
+          maxWidth = Math.max(maxWidth, viewport.width);
+        }
+
+        // Combine all pages into one tall canvas
+        const combined = document.createElement('canvas');
+        combined.width = maxWidth;
+        combined.height = totalHeight;
+        const ctx = combined.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, maxWidth, totalHeight);
+        let yOffset = 0;
+        for (const pc of pageCanvases) {
+          ctx.drawImage(pc, 0, yOffset);
+          yOffset += pc.height;
+        }
+
+        const dataUrl = combined.toDataURL('image/jpeg', 0.85);
+        setImagePreview(dataUrl);
+        setStep('upload');
+        scanDocument(dataUrl.split(',')[1], 'image/jpeg');
+      } catch (err) {
+        console.error('PDF conversion error:', err);
+        setError('Could not read PDF. Try uploading an image instead.');
+        setStep('upload');
+      }
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -124,57 +181,81 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     setError(null);
 
     try {
-      if (!import.meta.env.VITE_GOOGLE_API_KEY) {
-        throw new Error("Missing API Key. Add VITE_GOOGLE_API_KEY to your .env.local file.");
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing API Key. Add VITE_GROQ_API_KEY to your .env.local file.");
       }
 
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_API_KEY);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                code: { type: SchemaType.STRING },
-                title: { type: SchemaType.STRING },
-                unit: { type: SchemaType.NUMBER },
-                grade: { type: SchemaType.STRING },
-              },
-              required: ["code", "unit"]
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyze this image. Determine if it is an academic document such as a result sheet, course registration form, transcript, or similar.
+
+If it is NOT an academic document, return an empty JSON array: []
+
+If it IS an academic document, extract all courses listed. Return ONLY a valid JSON array where each object has:
+- "code" (Course Code, e.g., MTH101)
+- "title" (Course Title, if visible)
+- "unit" (Credit Unit/Load, number)
+- "grade" (Letter Grade: A, B, C, D, E, or F — use empty string "" if no grade is shown)
+
+Rules:
+1. If letter grades are visible, use them directly.
+2. If only numerical scores are present, convert using: A=70-100, B=60-69, C=50-59, D=45-49, E=40-44, F=0-39.
+3. If this is a course registration form with NO grades/scores, set grade to "".
+4. Ignore headers, student info, and footer text.
+5. If you cannot identify any courses, return an empty array.
+6. Return ONLY the JSON array. No markdown, no code fences, just the raw JSON array.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: { url: dataUrl }
+                }
+              ]
             }
-          }
-        }
+          ],
+          temperature: 0.1,
+          max_tokens: 4096,
+          response_format: { type: 'json_object' }
+        })
       });
 
-      const prompt = `Analyze this image or document. Determine if it is an academic document such as a result sheet, course registration form, transcript, or similar.
-        
-        If it is NOT an academic document, return an empty JSON array: []
-        
-        If it IS an academic document, extract all courses listed. Return a JSON array where each object has:
-        - 'code' (Course Code, e.g., MTH101)
-        - 'title' (Course Title, if visible)
-        - 'unit' (Credit Unit/Load, number)
-        - 'grade' (Letter Grade: A, B, C, D, E, or F — leave as empty string "" if no grade is shown)
-        
-        Rules:
-        1. If letter grades are visible, use them directly.
-        2. If only numerical scores are present, convert using: A=70-100, B=60-69, C=50-59, D=45-49, E=40-44, F=0-39.
-        3. If this is a course registration form with NO grades/scores, set grade to "".
-        4. Ignore headers, student info, and footer text.
-        5. If you cannot identify any courses, return an empty array.`;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `API error: ${response.status}`);
+      }
 
-      const result = await model.generateContent([
-        prompt,
-        { inlineData: { data: base64Data, mimeType } }
-      ]);
-
-      const rawText = result.response.text();
+      const data = await response.json();
+      const rawText = data.choices?.[0]?.message?.content || '';
       if (!rawText) throw new Error("No data returned from AI.");
 
-      const parsedData = JSON.parse(rawText);
+      // Parse — handle both raw array and { courses: [...] } wrapper
+      let parsedData: any[];
+      try {
+        const parsed = JSON.parse(rawText);
+        parsedData = Array.isArray(parsed) ? parsed : (parsed.courses || parsed.data || []);
+      } catch {
+        // Try extracting JSON array from text
+        const match = rawText.match(/\[[\s\S]*\]/);
+        if (match) {
+          parsedData = JSON.parse(match[0]);
+        } else {
+          throw new Error("Could not parse AI response.");
+        }
+      }
 
       const courses: Course[] = parsedData.map((item: any) => ({
         id: generateId(),
@@ -350,7 +431,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
                 </button>
                 <button
                   onClick={capturePhoto}
-                  className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                 >
                   <Camera size={16} />
                   Capture
@@ -380,8 +461,8 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
               {/* Icon */}
               <div className="mb-6" style={{ animation: 'scanner-float 2s ease-in-out infinite' }}>
-                <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-primary">
+                <div className="size-16 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-gray-700 dark:text-gray-300">
                     <path d="M4 18H32M4 10H16M4 26H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
                     <circle cx="26" cy="26" r="6" stroke="currentColor" strokeWidth="2"/>
                     <path d="M23 26l2 2 3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -395,11 +476,11 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
               {/* Google Material-style linear progress bar */}
               <div className="w-full max-w-xs h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
                 <div
-                  className="absolute inset-y-0 left-0 w-full bg-primary rounded-full"
+                  className="absolute inset-y-0 left-0 w-full bg-gray-800 dark:bg-white rounded-full"
                   style={{ animation: 'material-progress 1.8s cubic-bezier(0.4,0,0.2,1) infinite', transformOrigin: 'left center' }}
                 />
                 <div
-                  className="absolute inset-y-0 left-0 w-full bg-primary/60 rounded-full"
+                  className="absolute inset-y-0 left-0 w-full bg-gray-600 dark:bg-gray-300 rounded-full"
                   style={{ animation: 'material-progress-2 1.8s cubic-bezier(0.4,0,0.2,1) 0.3s infinite', transformOrigin: 'left center' }}
                 />
               </div>
@@ -574,7 +655,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
               {/* Add Row */}
               <button
                 onClick={addEmptyRow}
-                className="w-full py-2 text-sm font-medium text-primary border border-dashed border-primary/30 dark:border-primary/20 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-1.5 mb-4"
+                className="w-full py-2 text-sm font-medium text-gray-600 dark:text-gray-300 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5 mb-4"
               >
                 <Plus size={14} />
                 Add Course
@@ -588,14 +669,14 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
           <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700/50 flex gap-2 bg-white dark:bg-[#1a1a24] rounded-b-2xl">
             <button
               onClick={reset}
-              className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 py-2.5 text-sm font-medium text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               Scan Again
             </button>
             <button
               onClick={handleImportConfirm}
               disabled={extractedCourses.length === 0}
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Import {extractedCourses.length > 0 ? `(${extractedCourses.length})` : ''}
             </button>

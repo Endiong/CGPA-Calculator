@@ -89,7 +89,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             onClick={handleConfirm}
                             className={`px-3.5 py-2 text-xs font-semibold text-white rounded-lg transition-colors ${isDestructive
                                 ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-primary hover:bg-primary-dark'
+                                : 'bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200'
                                 }`}
                         >
                             {confirmLabel}
