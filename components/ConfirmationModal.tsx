@@ -44,21 +44,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div className="absolute inset-0" onClick={onClose} />
             <div
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full overflow-hidden relative z-10 transition-colors"
+                className="bg-white dark:bg-[#1a1a24] rounded-xl shadow-2xl max-w-md w-full overflow-hidden relative z-10 transition-colors"
                 role="dialog"
                 aria-modal="true"
             >
                 <div className="p-5">
                     <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className={`flex items-center justify-center size-9 rounded-full ${isDestructive
-                                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                                    : 'bg-primary/10 text-primary'
-                                }`}>
-                                <AlertTriangle size={18} />
-                            </div>
-                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{title}</h3>
-                        </div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{title}</h3>
                         <button
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors p-1"
@@ -78,7 +70,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 id="dontAskAgain"
                                 checked={dontAskAgain}
                                 onChange={(e) => setDontAskAgain(e.target.checked)}
-                                className="rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary h-3.5 w-3.5"
+                                className="rounded border-gray-300 dark:border-gray-600 text-gray-600 focus:ring-gray-500 h-3.5 w-3.5"
                             />
                             <label htmlFor="dontAskAgain" className="text-xs text-gray-500 dark:text-gray-400 select-none cursor-pointer">
                                 Don't ask me again

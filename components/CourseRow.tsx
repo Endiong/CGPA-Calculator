@@ -47,7 +47,7 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           value={course.unit}
           onFocus={(e) => e.target.select()}
           onChange={(e) => onChange(course.id, 'unit', parseInt(e.target.value) || 0)}
-          className="w-full bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-700 rounded text-center p-1 text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none font-medium text-sm transition-colors"
+          className="w-full bg-gray-50 dark:bg-[#0f0f1a] border border-transparent focus:border-gray-400 dark:focus:border-gray-500 focus:bg-white dark:focus:bg-gray-700 rounded text-center p-1 text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none font-medium text-sm transition-colors"
         />
       </td>
       <td className="px-3 md:px-4 py-2.5">
@@ -55,7 +55,7 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           <select
             value={course.grade}
             onChange={(e) => onChange(course.id, 'grade', e.target.value as GradeLetter)}
-            className="w-full appearance-none py-1.5 pl-2.5 pr-6 rounded font-medium focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 text-xs cursor-pointer border transition-colors focus:outline-none bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+            className="w-full appearance-none py-1.5 pl-2.5 pr-6 rounded font-medium focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 text-xs cursor-pointer border transition-colors focus:outline-none bg-gray-50 border-gray-200 text-gray-700 dark:bg-[#0f0f1a] dark:border-gray-600 dark:text-gray-300"
           >
             {GRADE_OPTIONS.map((opt) => (
               <option key={opt.letter} value={opt.letter}>

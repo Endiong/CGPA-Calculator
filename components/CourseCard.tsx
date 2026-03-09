@@ -16,7 +16,8 @@ const CourseCard: React.FC<CourseCardProps> = ({ index, course, scale, onChange,
     const points = (Number(course.unit) || 0) * getGradeValue(course.grade, scale);
 
     return (
-        <div className="group bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-primary/20 dark:hover:border-primary/20">
+        <div className="group bg-white dark:bg-[#0f0f1a] p-4 rounded-xl border border-gray-100 dark:border-gray-700/40 shadow-sm transition-all hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600">
+
             {/* Top Row: Code, Title, Delete */}
             <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -62,7 +63,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ index, course, scale, onChange,
                         value={course.unit}
                         onFocus={(e) => e.target.select()}
                         onChange={(e) => onChange(course.id, 'unit', parseInt(e.target.value) || 0)}
-                        className="w-full bg-gray-50 dark:bg-gray-700/50 border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-700 rounded-lg text-center py-2 px-1 text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none font-bold text-sm transition-all"
+                        className="w-full bg-gray-50 dark:bg-[#0a0a14] border border-transparent focus:border-gray-400 dark:focus:border-gray-500 focus:bg-white dark:focus:bg-gray-700 rounded-lg text-center py-2 px-1 text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none font-bold text-sm transition-all"
                     />
                 </div>
 
@@ -73,7 +74,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ index, course, scale, onChange,
                         <select
                             value={course.grade}
                             onChange={(e) => onChange(course.id, 'grade', e.target.value as GradeLetter)}
-                            className="w-full appearance-none py-2 pl-3 pr-8 rounded-lg font-bold text-sm cursor-pointer border transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300"
+                            className="w-full appearance-none py-2 pl-3 pr-8 rounded-lg font-bold text-sm cursor-pointer border transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 bg-gray-50 border-gray-200 text-gray-700 dark:bg-[#0a0a14] dark:border-gray-600 dark:text-gray-300"
                         >
                             {GRADE_OPTIONS.map((opt) => (
                                 <option key={opt.letter} value={opt.letter}>

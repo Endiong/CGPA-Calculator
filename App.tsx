@@ -53,6 +53,18 @@ function App() {
   };
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  const [showGradient, setShowGradient] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('show_gradient');
+      return saved !== null ? saved === 'true' : true; // default ON
+    } catch { return true; }
+  });
+
+  const handleShowGradientChange = (show: boolean) => {
+    setShowGradient(show);
+    localStorage.setItem('show_gradient', String(show));
+  };
+
   // Dark mode initialization
   useEffect(() => {
     try {
@@ -150,12 +162,24 @@ function App() {
 
     // Prevent deletion of the first year (Year 1)
     if (yearIndex === 0) {
-      alert("Year 1 cannot be deleted as it is the foundation of your record.");
+      requestConfirmation({
+        title: "Cannot Delete Year 1",
+        message: "Year 1 cannot be deleted as it is the foundation of your academic record.",
+        confirmLabel: "Got it",
+        isDestructive: false,
+        onConfirm: () => { },
+      });
       return;
     }
 
     if (data.length <= 1) {
-      alert("You cannot delete the only remaining year.");
+      requestConfirmation({
+        title: "Cannot Delete",
+        message: "You cannot delete the only remaining year. At least one year must exist.",
+        confirmLabel: "Got it",
+        isDestructive: false,
+        onConfirm: () => { },
+      });
       return;
     }
 
@@ -210,7 +234,13 @@ function App() {
     if (!activeYear) return;
 
     if (activeYear.semesters.length <= 1) {
-      alert("A year must have at least one semester.");
+      requestConfirmation({
+        title: "Cannot Delete Semester",
+        message: "A year must have at least one semester. Add another semester before deleting this one.",
+        confirmLabel: "Got it",
+        isDestructive: false,
+        onConfirm: () => { },
+      });
       return;
     }
 
@@ -250,9 +280,9 @@ function App() {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
 
-    // Design Colors (Premium Brand Theme)
-    const primaryColor = [17, 24, 39] as [number, number, number]; // #111827 (Charcoal/Dark Blue)
-    const accentColor = [5, 150, 105] as [number, number, number]; // #059669 (Emerald)
+    // Design Colors (Professional Monochrome)
+    const primaryColor = [17, 24, 39] as [number, number, number]; // #111827 (Charcoal)
+    const accentColor = [55, 65, 81] as [number, number, number]; // #374151 (Dark gray)
     const grayBg = [249, 250, 251]; // Gray 50
     const darkText = [17, 24, 39]; // Gray 900
     const lightText = [107, 114, 128]; // Gray 500
@@ -652,146 +682,138 @@ function App() {
   const overallStats = calculateOverallStats(data, scale);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gray-50/50 dark:bg-gray-900/50 transition-colors">
-      <Grainient
-        color1="#FF6B35"
-        color2="#FF1493"
-        color3="#7B2FFF"
-        timeSpeed={0.2}
-        colorBalance={0}
-        warpStrength={1}
-        warpFrequency={4}
-        warpSpeed={1.5}
-        warpAmplitude={40}
-        blendAngle={0}
-        blendSoftness={0.1}
-        rotationAmount={400}
-        noiseScale={2}
-        grainAmount={0.15}
-        grainScale={2}
-        grainAnimated={false}
-        contrast={1.6}
-        gamma={1}
-        saturation={1.3}
-        centerX={0}
-        centerY={0}
-        zoom={0.9}
-      />
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-50/50 dark:bg-[#0d0d14]/80 transition-colors">
+      {showGradient && (
+        <Grainient
+          color1="#FF6B35"
+          color2="#FF1493"
+          color3="#7B2FFF"
+          timeSpeed={0.2}
+          colorBalance={0}
+          warpStrength={1}
+          warpFrequency={4}
+          warpSpeed={1.5}
+          warpAmplitude={40}
+          blendAngle={0}
+          blendSoftness={0.1}
+          rotationAmount={400}
+          noiseScale={2}
+          grainAmount={0.15}
+          grainScale={2}
+          grainAnimated={false}
+          contrast={1.6}
+          gamma={1}
+          saturation={1.3}
+          centerX={0}
+          centerY={0}
+          zoom={0.9}
+        />
+      )}
       {/* Header */}
-      <header className="flex-none bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/80 px-4 sm:px-6 py-3 z-20 transition-colors">
+      <header className="flex-none bg-white/80 dark:bg-[#1a1a24]/90 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-3 z-30 transition-colors relative">
         <div className="max-w-[960px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <div className="size-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
               <Calculator size={16} />
             </div>
             <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">GPA Calculator</h1>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <button
               onClick={handleClearAllData}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs font-medium transition-colors"
+              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               title="Clear All Data"
             >
-              <Trash2 size={14} />
-              <span>Clear</span>
+              <Trash2 size={15} />
             </button>
             <button
               onClick={() => setIsAIModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium transition-colors"
+              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Scan Document"
             >
-              <ScanLine size={14} />
-              <span className="hidden sm:inline">Scan</span>
+              <ScanLine size={15} />
             </button>
             <button
               onClick={() => setIsInfoModalOpen(true)}
               className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Grading Guide"
             >
-              <Info size={16} />
+              <Info size={15} />
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium transition-colors"
+              className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Export PDF"
             >
-              <FileDown size={14} />
-              <span className="hidden sm:inline">PDF</span>
+              <FileDown size={15} />
             </button>
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               title="Settings"
             >
-              <Settings size={16} />
-            </button>
-            <button
-              onClick={handleClearAllData}
-              className="sm:hidden flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              title="Clear Data"
-            >
-              <Trash2 size={14} />
+              <Settings size={15} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24">
-
-          {/* Year Tabs — pill style */}
-          <div className="sticky top-0 bg-gray-50/60 dark:bg-gray-900/60 backdrop-blur-md z-10 pt-4 pb-3 transition-colors">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              {data.map((year, index) => (
-                <button
-                  key={year.id}
-                  onClick={() => setActiveYearId(year.id)}
-                  className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${activeYearId === year.id
-                    ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
-                    : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border border-gray-200 dark:border-gray-600 hover:border-gray-300'
+      {/* Year Tabs — fixed bar between header and scrollable content */}
+      <div className="flex-none bg-white/50 dark:bg-white/[0.03] backdrop-blur-xl border-b border-white/20 dark:border-white/[0.06] px-4 sm:px-6 py-2.5 z-20 transition-colors">
+        <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {data.map((year, index) => (
+            <button
+              key={year.id}
+              onClick={() => setActiveYearId(year.id)}
+              className={`group relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-sm backdrop-blur-md border ${activeYearId === year.id
+                ? 'bg-gray-900/90 dark:bg-gray-100/90 text-white dark:text-gray-900 border-gray-900/20 dark:border-white/20'
+                : 'bg-white/60 dark:bg-[#1a1a24]/60 text-gray-600 dark:text-gray-300 border-gray-200/50 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-[#1a1a24]/80'
+                }`}
+            >
+              {year.name}
+              {data.length > 1 && index !== 0 && (
+                <span
+                  onClick={(e) => deleteYear(e as any, year.id)}
+                  className={`ml-0.5 rounded-full transition-colors ${activeYearId === year.id
+                    ? 'text-gray-400 hover:text-white'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-red-500'
                     }`}
                 >
-                  {year.name}
-                  {data.length > 1 && index !== 0 && (
-                    <span
-                      onClick={(e) => deleteYear(e as any, year.id)}
-                      className={`ml-0.5 rounded-full transition-colors ${activeYearId === year.id
-                        ? 'text-gray-400 hover:text-white'
-                        : 'text-gray-300 hover:text-red-500'
-                        }`}
-                    >
-                      <X size={12} />
-                    </span>
-                  )}
-                </button>
-              ))}
-              <button
-                onClick={addYear}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 border border-dashed border-gray-200 dark:border-gray-600 hover:border-primary/30 whitespace-nowrap transition-all"
-              >
-                <Plus size={12} />
-                Add Year
-              </button>
-            </div>
-          </div>
+                  <X size={12} />
+                </span>
+              )}
+            </button>
+          ))}
+          <button
+            onClick={addYear}
+            className="flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100/60 dark:bg-gray-800/40 hover:bg-gray-200/60 dark:hover:bg-gray-700/40 border border-gray-200/50 dark:border-gray-700/50 whitespace-nowrap transition-all shadow-sm backdrop-blur-md"
+          >
+            <Plus size={12} />
+            Add Year
+          </button>
+        </div>
+      </div>
 
-          {/* Exclude/Include toggle — compact inline */}
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24 pt-4">
+
+          {/* Exclude/Include toggle */}
           {activeYear && (
-            <div className={`mb-4 px-3 py-2 rounded-lg flex items-center justify-between text-xs ${activeYear.isExcluded
-              ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30'
-              : 'bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30'
+            <div className={`mb-4 mt-3 px-3 py-2 rounded-lg flex items-center justify-between text-xs ${activeYear.isExcluded
+              ? 'bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/40'
+              : 'bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200/80 dark:border-emerald-800/40'
               }`}>
               <span className={`font-medium ${activeYear.isExcluded ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
                 {activeYear.isExcluded
-                  ? 'This year is excluded from CGPA'
-                  : 'This year counts toward CGPA'}
+                  ? 'Excluded from CGPA'
+                  : 'Counts toward CGPA'}
               </span>
               <button
                 onClick={() => toggleYearExclusion(activeYear.id)}
                 className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${activeYear.isExcluded
-                  ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-                  : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                  ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                  : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
                   }`}
               >
                 {activeYear.isExcluded ? 'Include' : 'Exclude'}
@@ -800,7 +822,7 @@ function App() {
           )}
 
           {/* Semesters */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 relative z-10">
             {activeYear && activeYear.semesters.map((semester) => (
               <SemesterSection
                 key={semester.id}
@@ -815,10 +837,10 @@ function App() {
             ))}
 
             {activeYear && (
-              <div className="flex justify-center pt-2 pb-6">
+              <div className="flex justify-center pt-4 pb-6 relative z-10">
                 <button
                   onClick={() => addSemester(activeYear.id)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-primary bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 hover:border-primary/30 transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/80 dark:bg-[#1a1a24]/80 border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm transition-all"
                 >
                   <Plus size={14} />
                   Add Semester
@@ -865,6 +887,8 @@ function App() {
         onClose={() => setIsSettingsOpen(false)}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
+        showGradient={showGradient}
+        onShowGradientChange={handleShowGradientChange}
       />
     </div>
   );

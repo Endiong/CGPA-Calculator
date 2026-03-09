@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, ChevronRight, GraduationCap } from 'lucide-react';
+import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { GRADE_OPTIONS } from '../constants';
 
 interface GradingInfoModalProps {
@@ -16,13 +16,10 @@ const GradingInfoModal: React.FC<GradingInfoModalProps> = ({ isOpen, onClose }) 
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="bg-white dark:bg-gray-800 w-full sm:rounded-2xl sm:max-w-md sm:mx-4 rounded-t-2xl shadow-xl relative z-10 flex flex-col max-h-[85vh] transition-colors overflow-hidden">
+      <div className="bg-white dark:bg-[#1a1a24] w-full sm:rounded-2xl sm:max-w-md sm:mx-4 rounded-t-2xl shadow-xl relative z-10 flex flex-col max-h-[85vh] transition-colors overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50 bg-white/50 dark:bg-[#1a1a24]/50 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-primary/10 rounded-lg text-primary">
-              <GraduationCap size={18} />
-            </div>
             <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Grading System</h2>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 transition-colors">
@@ -38,14 +35,15 @@ const GradingInfoModal: React.FC<GradingInfoModalProps> = ({ isOpen, onClose }) 
               <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Grade Points</h3>
               <div className="grid grid-cols-6 gap-2">
                 {GRADE_OPTIONS.map((opt) => (
-                  <div key={opt.letter} className="flex flex-col items-center bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2 border border-gray-100 dark:border-gray-700">
-                    <span className={`text-lg font-black mb-1 ${opt.letter === 'A' ? 'text-emerald-500' :
-                      opt.letter === 'B' ? 'text-teal-500' :
+                  <div key={opt.letter} className="flex flex-col items-center bg-gray-50 dark:bg-[#111118] rounded-lg p-2 border border-gray-100 dark:border-gray-700/50">
+                    <span className={`text-lg font-black mb-1 ${
+                      opt.letter === 'A' ? 'text-emerald-500' :
+                      opt.letter === 'B' ? 'text-sky-500' :
                         opt.letter === 'C' ? 'text-amber-500' :
                           opt.letter === 'D' ? 'text-orange-500' :
-                            opt.letter === 'E' ? 'text-rose-500' :
-                              'text-red-600'
-                      }`}>{opt.letter}</span>
+                            opt.letter === 'E' ? 'text-rose-600' :
+                              'text-red-700'
+                    }`}>{opt.letter}</span>
                     <div className="flex flex-col items-center gap-0.5 w-full">
                       <span className="text-[10px] uppercase text-gray-400 font-bold">5.0</span>
                       <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{opt.value5}</span>

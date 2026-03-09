@@ -68,8 +68,6 @@ export const getClassOfDegree = (cgpa: number, scale: GradingScale): string => {
 };
 
 export const getGradeColor = (cgpa: number, scale: GradingScale): string => {
-  if (cgpa === 0) return 'text-gray-400 dark:text-gray-500';
-
   if (scale === '5.0') {
     if (cgpa >= 4.50) return 'text-emerald-600 dark:text-emerald-400';
     if (cgpa >= 3.50) return 'text-teal-600 dark:text-teal-400';

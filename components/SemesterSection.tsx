@@ -29,11 +29,13 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
   const colorClass = getGradeColor(stats.gpa, scale);
   const bgColorClass = colorClass.replace('text-', 'bg-').replace('dark:text-', 'dark:bg-').replace('600', '50').replace('400', '900/30');
 
+  const emptyBadge = stats.totalUnits === 0;
+
   return (
-    <div className="rounded-xl bg-white dark:bg-gray-800 backdrop-blur-md border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
+    <div className="rounded-xl bg-white dark:bg-[#141420] backdrop-blur-md border border-gray-100 dark:border-gray-700/40 overflow-hidden transition-colors shadow-lg dark:shadow-black/40">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3.5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700"
+        className="flex items-center justify-between px-4 py-3.5 cursor-pointer select-none border-b border-gray-100 dark:border-gray-700/50"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-2.5">
@@ -41,9 +43,15 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
           </div>
           <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">{semester.name}</h2>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full transition-colors ${bgColorClass} ${colorClass}`}>
-            {stats.gpa.toFixed(2)}
-          </span>
+          {emptyBadge ? (
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500">
+              —
+            </span>
+          ) : (
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full transition-colors ${bgColorClass} ${colorClass}`}>
+              {stats.gpa.toFixed(2)}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -129,7 +137,7 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
           <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-700/50">
             <button
               onClick={() => onAddCourse(semester.id)}
-              className="flex items-center justify-center w-full py-2 text-xs font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 hover:border-primary/30 transition-all gap-1.5"
+              className="flex items-center justify-center w-full py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 transition-all gap-1.5"
             >
               <Plus size={14} />
               Add Course
