@@ -102,3 +102,13 @@ export const getGradeColorRGB = (cgpa: number, scale: GradingScale): [number, nu
     return [220, 38, 38]; // Red 600
   }
 };
+
+
+export const createEmptyCourses = (count: number) =>
+  Array.from({ length: count }).map(() => ({
+    id: generateId(),
+    code: '',
+    title: '',
+    unit: 0,
+    grade: 'A' as const
+  }));

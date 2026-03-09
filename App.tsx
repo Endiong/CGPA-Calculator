@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Year, GradingScale, Course } from './types';
 import { getInitialData } from './constants';
-import { calculateOverallStats, calculateSemesterStats, generateId, getGradeValue, getClassOfDegree, getGradeColorRGB } from './utils';
+import { calculateOverallStats, calculateSemesterStats, generateId, getGradeValue, getClassOfDegree, getGradeColorRGB, createEmptyCourses } from './utils';
 import SemesterSection from './components/SemesterSection';
 import Footer from './components/Footer';
 import GradingInfoModal from './components/GradingInfoModal';
@@ -132,14 +132,6 @@ function App() {
   };
 
   // Actions
-  const createEmptyCourses = (count: number) =>
-    Array.from({ length: count }).map(() => ({
-      id: generateId(),
-      code: '',
-      title: '',
-      unit: 0,
-      grade: 'A' as const
-    }));
 
   const handleClearAllData = () => {
     requestConfirmation({
