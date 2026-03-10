@@ -62,9 +62,21 @@ function App() {
         } catch { return true; }
     });
 
+    const [gradientColors, setGradientColors] = useState<string[]>(() => {
+        try {
+            const saved = localStorage.getItem('gradient_colors');
+            return saved ? JSON.parse(saved) : ['#FF9FFC', '#5227FF', '#B19EEF'];
+        } catch { return ['#FF9FFC', '#5227FF', '#B19EEF']; }
+    });
+
     const handleShowGradientChange = (show: boolean) => {
         setShowGradient(show);
         localStorage.setItem('show_gradient', String(show));
+    };
+
+    const handleGradientColorsChange = (colors: string[]) => {
+        setGradientColors(colors);
+        localStorage.setItem('gradient_colors', JSON.stringify(colors));
     };
 
     // Dark mode initialization
@@ -626,9 +638,7 @@ function App() {
         <div className="flex flex-col h-screen overflow-hidden bg-gray-50/50 dark:bg-[#0d0d14]/80 transition-colors">
             {showGradient && (
                 <Grainient
-                    color1="#FF6B35"
-                    color2="#FF1493"
-                    color3="#7B2FFF"
+                    colors={gradientColors}
                     timeSpeed={0.2}
                     colorBalance={0}
                     warpStrength={1}
@@ -839,6 +849,8 @@ function App() {
                 onViewModeChange={handleViewModeChange}
                 showGradient={showGradient}
                 onShowGradientChange={handleShowGradientChange}
+                gradientColors={gradientColors}
+                onGradientColorsChange={handleGradientColorsChange}
             />
         </div>
     );

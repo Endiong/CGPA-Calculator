@@ -22,9 +22,7 @@ interface GrainientProps {
     centerX?: number;
     centerY?: number;
     zoom?: number;
-    color1?: string;
-    color2?: string;
-    color3?: string;
+    colors?: string[];
     className?: string;
 }
 
@@ -67,9 +65,13 @@ uniform float uGamma;
 uniform float uSaturation;
 uniform vec2 uCenterOffset;
 uniform float uZoom;
+uniform vec3 uColor0;
 uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform vec3 uColor3;
+uniform vec3 uColor4;
+uniform vec3 uColor5;
+uniform int uColorCount;
 out vec4 fragColor;
 #define S(a,b,t) smoothstep(a,b,t)
 mat2 Rot(float a){float s=sin(a),c=cos(a);return mat2(c,-s,s,c);}
@@ -94,25 +96,42 @@ void mainImage(out vec4 o, vec2 C){
   tuv.x+=sin(tuv.y*frequency+warpTime)/amplitude;
   tuv.y+=sin(tuv.x*(frequency*1.5)+warpTime)/(amplitude*0.5);
 
-  vec3 colLav=uColor1;
-  vec3 colOrg=uColor2;
-  vec3 colDark=uColor3;
   float b=uColorBalance;
   float s=max(uBlendSoftness,0.0);
   mat2 blendRot=Rot(radians(uBlendAngle));
   float blendX=(tuv*blendRot).x;
-  float edge0=-0.3-b-s;
-  float edge1=0.2-b+s;
-  float v0=0.5-b+s;
-  float v1=-0.3-b-s;
-  vec3 layer1=mix(colDark,colOrg,S(edge0,edge1,blendX));
-  vec3 layer2=mix(colOrg,colLav,S(edge0,edge1,blendX));
-  vec3 col=mix(layer1,layer2,S(v0,v1,tuv.y));
 
+  // Start with the first color as the absolute background wash
+  vec3 col = uColor0;
+  
+  if (uColorCount > 1) {
+      float n1 = noise(tuv * 0.8 + vec2(t*0.2, -t*0.1));
+      col = mix(col, uColor1, smoothstep(0.2, 0.9, n1));
+  }
+  if (uColorCount > 2) {
+      float n2 = noise(tuv * 1.5 - vec2(t*0.3, t*0.4));
+      col = mix(col, uColor2, smoothstep(0.3, 0.8, n2));
+  }
+  if (uColorCount > 3) {
+      float n3 = noise(tuv * 1.2 + vec2(sin(t*0.2), cos(t*0.15)));
+      col = mix(col, uColor3, smoothstep(0.4, 0.85, n3));
+  }
+  if (uColorCount > 4) {
+      float n4 = noise(tuv * 2.0 + vec2(-t*0.4, t*0.2));
+      col = mix(col, uColor4, smoothstep(0.5, 0.9, n4));
+  }
+  if (uColorCount > 5) {
+      float n5 = noise(tuv * 2.5 + t*0.5);
+      col = mix(col, uColor5, smoothstep(0.6, 1.0, n5));
+  }
+
+  // Grain is added AFTER colors are mixed, across the entire UV coordinate space
   vec2 grainUv=uv*max(uGrainScale,0.001);
   if(uGrainAnimated>0.5){grainUv+=vec2(iTime*0.05);}
   float grain=fract(sin(dot(grainUv,vec2(12.9898,78.233)))*43758.5453);
-  col+=(grain-0.5)*uGrainAmount;
+  
+  // Mix the grain delicately into the final color
+  col += (grain - 0.5) * uGrainAmount;
 
   col=(col-0.5)*uContrast+0.5;
   float luma=dot(col,vec3(0.2126,0.7152,0.0722));
@@ -149,9 +168,7 @@ const Grainient: React.FC<GrainientProps> = ({
     centerX = 0.0,
     centerY = 0.0,
     zoom = 0.9,
-    color1 = '#FF9FFC',
-    color2 = '#5227FF',
-    color3 = '#B19EEF',
+    colors = ['#FF9FFC', '#5227FF', '#B19EEF'],
     className = ''
 }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -200,9 +217,13 @@ const Grainient: React.FC<GrainientProps> = ({
                 uSaturation: { value: saturation },
                 uCenterOffset: { value: new Float32Array([centerX, centerY]) },
                 uZoom: { value: zoom },
-                uColor1: { value: new Float32Array(hexToRgb(color1)) },
-                uColor2: { value: new Float32Array(hexToRgb(color2)) },
-                uColor3: { value: new Float32Array(hexToRgb(color3)) }
+                uColorCount: { value: Math.min(6, Math.max(1, colors.length)) },
+                uColor0: { value: new Float32Array(hexToRgb(colors[0] || colors[colors.length - 1] || '#000000')) },
+                uColor1: { value: new Float32Array(hexToRgb(colors[1] || colors[colors.length - 1] || '#000000')) },
+                uColor2: { value: new Float32Array(hexToRgb(colors[2] || colors[colors.length - 1] || '#000000')) },
+                uColor3: { value: new Float32Array(hexToRgb(colors[3] || colors[colors.length - 1] || '#000000')) },
+                uColor4: { value: new Float32Array(hexToRgb(colors[4] || colors[colors.length - 1] || '#000000')) },
+                uColor5: { value: new Float32Array(hexToRgb(colors[5] || colors[colors.length - 1] || '#000000')) }
             }
         });
 
@@ -244,7 +265,7 @@ const Grainient: React.FC<GrainientProps> = ({
         timeSpeed, colorBalance, warpStrength, warpFrequency, warpSpeed,
         warpAmplitude, blendAngle, blendSoftness, rotationAmount, noiseScale,
         grainAmount, grainScale, grainAnimated, contrast, gamma, saturation,
-        centerX, centerY, zoom, color1, color2, color3
+        centerX, centerY, zoom, JSON.stringify(colors)
     ]);
 
     return <div ref={containerRef} className={`grainient-container ${className}`.trim()} />;

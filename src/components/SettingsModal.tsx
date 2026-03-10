@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Trash2, RefreshCw } from 'lucide-react';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -8,9 +8,11 @@ interface SettingsModalProps {
     onViewModeChange: (mode: 'table' | 'card') => void;
     showGradient: boolean;
     onShowGradientChange: (show: boolean) => void;
+    gradientColors: string[];
+    onGradientColorsChange: (colors: string[]) => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode, onViewModeChange, showGradient, onShowGradientChange }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode, onViewModeChange, showGradient, onShowGradientChange, gradientColors, onGradientColorsChange }) => {
     const [isDark, setIsDark] = useState(() => {
         try {
             return localStorage.getItem('theme') === 'dark';
@@ -56,6 +58,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
             keysToRemove.forEach(k => localStorage.removeItem(k));
             setSuppressedCount(0);
         } catch { }
+    };
+
+    const handleColorChange = (index: number, newColor: string) => {
+        const newColors = [...gradientColors];
+        newColors[index] = newColor;
+        onGradientColorsChange(newColors);
+    };
+
+    const handleAddColor = () => {
+        if (gradientColors.length >= 6) return;
+        onGradientColorsChange([...gradientColors, '#000000']);
+    };
+
+    const handleRemoveColor = (index: number) => {
+        if (gradientColors.length <= 1) return;
+        const newColors = [...gradientColors];
+        newColors.splice(index, 1);
+        onGradientColorsChange(newColors);
+    };
+
+    const generateRandomGradient = () => {
+        const randomColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        const count = Math.max(3, gradientColors.length); // keep at least 3, or current amount
+        const newColors = Array.from({ length: count }, randomColor);
+        onGradientColorsChange(newColors);
     };
 
     if (!isOpen) return null;
@@ -105,6 +132,59 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                             </button>
                         </div>
                     </section>
+
+                    {/* Gradient Customization */}
+                    {showGradient && (
+                        <section>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Gradient Colors</h3>
+                                <button onClick={generateRandomGradient} className="text-[10px] font-bold text-indigo-500 flex items-center gap-1 hover:text-indigo-600 transition-colors bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md">
+                                    <RefreshCw size={10} /> Randomize
+                                </button>
+                            </div>
+
+                            <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 space-y-3">
+
+                                <div className="space-y-2">
+                                    {gradientColors.map((color, index) => (
+                                        <div key={index} className="flex items-center gap-2">
+                                            <div className="relative size-8 rounded-md overflow-hidden shrink-0 border border-gray-200 dark:border-gray-600 shadow-sm cursor-pointer group">
+                                                <input
+                                                    type="color"
+                                                    value={color}
+                                                    onChange={(e) => handleColorChange(index, e.target.value)}
+                                                    className="absolute inset-[-10px] size-[50px] cursor-pointer"
+                                                />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={color.toUpperCase()}
+                                                onChange={(e) => handleColorChange(index, e.target.value)}
+                                                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1.5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                                            />
+                                            <button
+                                                onClick={() => handleRemoveColor(index)}
+                                                disabled={gradientColors.length <= 1}
+                                                className={`p-1.5 rounded-md transition-colors shrink-0 ${gradientColors.length <= 1 ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {gradientColors.length < 6 && (
+                                    <button
+                                        onClick={handleAddColor}
+                                        className="w-full py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-1.5"
+                                    >
+                                        <Plus size={12} /> Add Color
+                                    </button>
+                                )}
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center uppercase tracking-wide px-1">Tip: Add multiple colors for a richer gradient effect.</p>
+                            </div>
+                        </section>
+                    )}
 
                     {/* View Layout */}
                     <section>
