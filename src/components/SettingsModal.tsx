@@ -60,7 +60,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
         } catch { }
     };
 
-    const handleColorChange = (index: number, newColor: string) => {
+    // We maintain a local state for the color inputs while they are being dragged,
+    // to prevent the entire Grainient WebGL canvas from re-rendering uncomfortably on every tiny mouse movement.
+    const [localColors, setLocalColors] = useState<string[]>(gradientColors);
+
+    useEffect(() => {
+        setLocalColors(gradientColors);
+    }, [gradientColors]);
+
+    const handleColorInteractionDrag = (index: number, newColor: string) => {
+        const newLocal = [...localColors];
+        newLocal[index] = newColor;
+        setLocalColors(newLocal);
+    };
+
+    const handleColorInteractionDrop = (index: number, newColor: string) => {
         const newColors = [...gradientColors];
         newColors[index] = newColor;
         onGradientColorsChange(newColors);
@@ -79,10 +93,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
     };
 
     const generateRandomGradient = () => {
-        const randomColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-        const count = Math.max(3, gradientColors.length); // keep at least 3, or current amount
-        const newColors = Array.from({ length: count }, randomColor);
-        onGradientColorsChange(newColors);
+        const palettes = [
+            ['#FF9FFC', '#5227FF', '#B19EEF'], // the OG
+            ['#FF5F6D', '#FFC371'], // peach sunset
+            ['#00C9FF', '#92FE9D'], // minty fresh
+            ['#8E2DE2', '#4A00E0', '#00C9FF'], // deep space
+            ['#f12711', '#f5af19'], // fiery inferno
+            ['#11998e', '#38ef7d'], // emerald dreams
+            ['#FDFC47', '#24FE41'], // neon life
+            ['#00c6ff', '#0072ff'], // oceanic
+            ['#a18cd1', '#fbc2eb', '#e1eec3'], // soft dawn
+            ['#ff9a9e', '#fecfef'], // cotton candy
+            ['#ff77a8', '#f8bbd0', '#e1bee7', '#ce93d8'], // magical girl
+            ['#000000', '#434343'], // dark slate
+            ['#1a2a6c', '#b21f1f', '#fdbb2d'], // deep retro
+            ['#4facfe', '#00f2fe', '#4facfe'], // sky loop
+            ['#ff0844', '#ffb199'], // vibrant heart
+        ];
+
+        // Pick a random palette. If it's the exact same length as current, maybe randomly pick one of correct size, 
+        // but it's more fun to just adopt the palette's size organically!
+        const randomPalette = palettes[Math.floor(Math.random() * palettes.length)];
+        onGradientColorsChange([...randomPalette]);
     };
 
     if (!isOpen) return null;
@@ -138,7 +170,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                         <section>
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Gradient Colors</h3>
-                                <button onClick={generateRandomGradient} className="text-[10px] font-bold text-indigo-500 flex items-center gap-1 hover:text-indigo-600 transition-colors bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md">
+                                <button onClick={generateRandomGradient} className="text-[10px] font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1 hover:text-black dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-700/80 px-2 py-1 rounded-md">
                                     <RefreshCw size={10} /> Randomize
                                 </button>
                             </div>
@@ -146,21 +178,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                             <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 space-y-3">
 
                                 <div className="space-y-2">
-                                    {gradientColors.map((color, index) => (
+                                    {localColors.map((color, index) => (
                                         <div key={index} className="flex items-center gap-2">
-                                            <div className="relative size-8 rounded-md overflow-hidden shrink-0 border border-gray-200 dark:border-gray-600 shadow-sm cursor-pointer group">
+                                            <div className="relative size-8 rounded-md overflow-hidden shrink-0 border border-gray-200 dark:border-gray-600 shadow-sm cursor-pointer group hover:border-gray-300 dark:hover:border-gray-500 transition-colors">
                                                 <input
                                                     type="color"
                                                     value={color}
-                                                    onChange={(e) => handleColorChange(index, e.target.value)}
+                                                    onChange={(e) => handleColorInteractionDrag(index, e.target.value)}
+                                                    onBlur={(e) => handleColorInteractionDrop(index, e.target.value)} // Commit on release/blur
                                                     className="absolute inset-[-10px] size-[50px] cursor-pointer"
+                                                    title="Click and drag to choose color"
                                                 />
                                             </div>
                                             <input
                                                 type="text"
                                                 value={color.toUpperCase()}
-                                                onChange={(e) => handleColorChange(index, e.target.value)}
-                                                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1.5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                                                onChange={(e) => handleColorInteractionDrop(index, e.target.value)}
+                                                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1.5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-shadow"
+                                                placeholder="#FFFFFF"
+                                                maxLength={7}
                                             />
                                             <button
                                                 onClick={() => handleRemoveColor(index)}
