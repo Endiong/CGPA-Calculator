@@ -18,11 +18,11 @@ const GRADE_OPTIONS: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 const API_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const SCAN_PROMPT = `Analyze this image. Determine if it is an academic document such as a result sheet, course registration form, transcript, or similar.
+const SCAN_PROMPT = `Analyze this image carefully. Determine if it is an academic document such as a result sheet, course registration form, transcript, or similar.
 
 If it is NOT an academic document, return an empty JSON array: []
 
-If it IS an academic document, extract all courses listed. Return ONLY a valid JSON array where each object has:
+If it IS an academic document, extract EVERY SINGLE COURSE listed. Do not skip any courses, do not summarize. Return ONLY a valid JSON array where each object has:
 - "code" (Course Code, e.g., MTH101)
 - "title" (Course Title, if visible)
 - "unit" (Credit Unit/Load, number)
@@ -31,10 +31,11 @@ If it IS an academic document, extract all courses listed. Return ONLY a valid J
 Rules:
 1. If letter grades are visible, use them directly.
 2. If only numerical scores are present, convert using: A=70-100, B=60-69, C=50-59, D=45-49, E=40-44, F=0-39.
-3. If this is a course registration form with NO grades/scores, set grade to "".
+3. If this is a course registration form with NO grades/scores, set grade to "A".
 4. Ignore headers, student info, and footer text.
 5. If you cannot identify any courses, return an empty array.
-6. Return ONLY the JSON array. No markdown, no code fences, just the raw JSON array.`;
+6. Return ONLY the JSON array. No markdown, no code fences, just the raw JSON array.
+7. CRITICAL: Extract ALL rows from the document.`;
 
 // ── Helpers ──
 const validateGrade = (input: string): GradeLetter => {
@@ -146,7 +147,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
         // Use Gemini
         const genAI = new GoogleGenerativeAI(geminiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        
+
         const result = await model.generateContent([
           SCAN_PROMPT,
           {
@@ -156,7 +157,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
             }
           }
         ]);
-        
+
         rawText = result.response.text();
       } else {
         // Use Groq

@@ -13,8 +13,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode, onViewModeChange, showGradient, onShowGradientChange }) => {
     const [isDark, setIsDark] = useState(() => {
         try {
-            return localStorage.getItem('theme') === 'dark' ||
-                (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            return localStorage.getItem('theme') === 'dark';
         } catch { return false; }
     });
 
@@ -149,8 +148,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                                     onClick={resetConfirmations}
                                     disabled={suppressedCount === 0}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${suppressedCount > 0
-                                            ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                            : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                                        ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                        : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                                         }`}
                                 >
                                     Reset
