@@ -756,7 +756,7 @@ function App() {
                     </div>
                 </div>
 
-                <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24 pt-4">
+                <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-36 pt-4">
 
                     {/* Exclude/Include toggle */}
                     {activeYear && (
