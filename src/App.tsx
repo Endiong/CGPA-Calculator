@@ -708,9 +708,11 @@ function App() {
         </div>
       </header>
 
-      {/* Year Tabs — fixed bar between header and scrollable content */}
-      <div className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-2.5 z-20 transition-colors">
-        <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        {/* Year Tabs — sticky inside scroll area so content scrolls behind it */}
+        <div className="sticky top-0 bg-white/20 dark:bg-[#1a1a24]/20 backdrop-blur-xl px-1 sm:px-6 py-2.5 z-20 transition-colors">
+          <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
           {data.map((year, index) => (
             <button
               key={year.id}
@@ -744,8 +746,6 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
         <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-24 pt-4">
 
           {/* Exclude/Include toggle */}
