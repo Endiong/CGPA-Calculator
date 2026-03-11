@@ -93,28 +93,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
     };
 
     const generateRandomGradient = () => {
-        const palettes = [
-            ['#FF9FFC', '#5227FF', '#B19EEF'], // the OG
-            ['#FF5F6D', '#FFC371'], // peach sunset
-            ['#00C9FF', '#92FE9D'], // minty fresh
-            ['#8E2DE2', '#4A00E0', '#00C9FF'], // deep space
-            ['#f12711', '#f5af19'], // fiery inferno
-            ['#11998e', '#38ef7d'], // emerald dreams
-            ['#FDFC47', '#24FE41'], // neon life
-            ['#00c6ff', '#0072ff'], // oceanic
-            ['#a18cd1', '#fbc2eb', '#e1eec3'], // soft dawn
-            ['#ff9a9e', '#fecfef'], // cotton candy
-            ['#ff77a8', '#f8bbd0', '#e1bee7', '#ce93d8'], // magical girl
-            ['#000000', '#434343'], // dark slate
-            ['#1a2a6c', '#b21f1f', '#fdbb2d'], // deep retro
-            ['#4facfe', '#00f2fe', '#4facfe'], // sky loop
-            ['#ff0844', '#ffb199'], // vibrant heart
-        ];
-
-        // Pick a random palette. If it's the exact same length as current, maybe randomly pick one of correct size, 
-        // but it's more fun to just adopt the palette's size organically!
-        const randomPalette = palettes[Math.floor(Math.random() * palettes.length)];
-        onGradientColorsChange([...randomPalette]);
+        // Generate random colors but keep the same number of colors as currently selected
+        const newColors = gradientColors.map(() => {
+            return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        });
+        onGradientColorsChange(newColors);
     };
 
     if (!isOpen) return null;
@@ -123,7 +106,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="absolute inset-0" onClick={onClose} />
 
-            <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-sm sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[80vh]">
+            <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-sm sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
                     <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Settings</h2>
@@ -180,16 +163,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                                 <div className="space-y-2">
                                     {localColors.map((color, index) => (
                                         <div key={index} className="flex items-center gap-2">
-                                            <div className="relative size-8 rounded-md overflow-hidden shrink-0 border border-gray-200 dark:border-gray-600 shadow-sm cursor-pointer group hover:border-gray-300 dark:hover:border-gray-500 transition-colors">
-                                                <input
-                                                    type="color"
-                                                    value={color}
-                                                    onChange={(e) => handleColorInteractionDrag(index, e.target.value)}
-                                                    onBlur={(e) => handleColorInteractionDrop(index, e.target.value)} // Commit on release/blur
-                                                    className="absolute inset-[-10px] size-[50px] cursor-pointer"
-                                                    title="Click and drag to choose color"
-                                                />
-                                            </div>
+                                            <input
+                                                type="color"
+                                                value={color}
+                                                onChange={(e) => handleColorInteractionDrag(index, e.target.value)}
+                                                onBlur={(e) => handleColorInteractionDrop(index, e.target.value)} // Commit on release/blur
+                                                className="size-8 cursor-pointer shrink-0 rounded border-0 p-0 bg-transparent"
+                                                title="Click to choose color"
+                                            />
                                             <input
                                                 type="text"
                                                 value={color.toUpperCase()}
@@ -264,7 +245,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                                     onClick={resetConfirmations}
                                     disabled={suppressedCount === 0}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${suppressedCount > 0
-                                        ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                        ? 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
                                         : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                                         }`}
                                 >

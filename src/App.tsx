@@ -635,7 +635,7 @@ function App() {
     const overallStats = calculateOverallStats(data, scale);
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-gray-50/50 dark:bg-[#0d0d14]/80 transition-colors">
+        <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50/50 dark:bg-[#0d0d14]/80 transition-colors">
             {showGradient && (
                 <Grainient
                     colors={gradientColors}
