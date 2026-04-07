@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, AlertCircle, Camera, Trash2, Plus, Check, ChevronDown } from 'lucide-react';
-import { Course, GradeLetter, Semester } from '../types';
+import { Course, GradeLetter, GradingConfig, Semester } from '../types';
 import { generateId } from '../utils';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -11,6 +11,7 @@ interface AIScannerModalProps {
   onImport: (courses: Course[], semesterId: string) => void;
   semesters: Semester[];
   viewMode: 'table' | 'card';
+  gradingConfig: GradingConfig;
 }
 
 // ── Constants ──
@@ -18,7 +19,13 @@ const GRADE_OPTIONS: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 const API_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-const SCAN_PROMPT = `Analyze this image carefully. Determine if it is an academic document such as a result sheet, course registration form, transcript, or similar.
+const buildScanPrompt = (config: GradingConfig): string => {
+  const ranges = config.scoreRanges;
+  const scoreGuide = (['A', 'B', 'C', 'D', 'E', 'F'] as GradeLetter[])
+    .map(l => `${l}=${ranges[l].min}-${ranges[l].max}`)
+    .join(', ');
+
+  return `Analyze this image carefully. Determine if it is an academic document such as a result sheet, course registration form, transcript, or similar.
 
 If it is NOT an academic document, return an empty JSON array: []
 
@@ -30,12 +37,13 @@ If it IS an academic document, extract EVERY SINGLE COURSE listed. Do not skip a
 
 Rules:
 1. If letter grades are visible, use them directly.
-2. If only numerical scores are present, convert using: A=70-100, B=60-69, C=50-59, D=45-49, E=40-44, F=0-39.
+2. If only numerical scores are present, convert using this grading scale: ${scoreGuide}.
 3. If this is a course registration form with NO grades/scores, set grade to "A".
 4. Ignore headers, student info, and footer text.
 5. If you cannot identify any courses, return an empty array.
 6. Return ONLY the JSON array. No markdown, no code fences, just the raw JSON array.
 7. CRITICAL: Extract ALL rows from the document.`;
+};
 
 // ── Helpers ──
 const validateGrade = (input: string): GradeLetter => {
@@ -59,7 +67,7 @@ const GradeSelect: React.FC<{
 );
 
 // ── Main Component ──
-const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImport, semesters, viewMode }) => {
+const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImport, semesters, viewMode, gradingConfig }) => {
   // State
   const [step, setStep] = useState<'upload' | 'scanning' | 'review'>('upload');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -132,6 +140,7 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
   const scanDocument = async (base64Data: string, mimeType: string) => {
     setStep('scanning');
     setError(null);
+    const SCAN_PROMPT = buildScanPrompt(gradingConfig);
 
     try {
       const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;

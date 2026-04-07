@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { X, Plus, Trash2, RefreshCw, ChevronDown } from 'lucide-react';
+import { GradingConfig, GradeLetter, GradingScale } from '../types';
+import { GRADING_PRESETS, DEFAULT_GRADING_CONFIG } from '../constants';
+
+const GRADE_LETTERS: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -10,21 +14,27 @@ interface SettingsModalProps {
     onShowGradientChange: (show: boolean) => void;
     gradientColors: string[];
     onGradientColorsChange: (colors: string[]) => void;
+    gradingConfig: GradingConfig;
+    onGradingConfigChange: (config: GradingConfig) => void;
+    scale: GradingScale;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode, onViewModeChange, showGradient, onShowGradientChange, gradientColors, onGradientColorsChange }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({
+    isOpen, onClose,
+    viewMode, onViewModeChange,
+    showGradient, onShowGradientChange,
+    gradientColors, onGradientColorsChange,
+    gradingConfig, onGradingConfigChange,
+    scale,
+}) => {
     const [isDark, setIsDark] = useState(() => {
-        // Read from the actual DOM class — always accurate regardless of localStorage state
-        try {
-            return document.documentElement.classList.contains('dark');
-        } catch { return false; }
+        try { return document.documentElement.classList.contains('dark'); } catch { return false; }
     });
 
     const [suppressedCount, setSuppressedCount] = useState(0);
+    const [gradingTab, setGradingTab] = useState<'points' | 'scores'>('scores');
 
-    useEffect(() => {
-        countSuppressed();
-    }, [isOpen]);
+    useEffect(() => { countSuppressed(); }, [isOpen]);
 
     const countSuppressed = () => {
         let count = 0;
@@ -61,53 +71,72 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
         } catch { }
     };
 
-    // We maintain a local state for the color inputs while they are being dragged,
-    // to prevent the entire Grainient WebGL canvas from re-rendering uncomfortably on every tiny mouse movement.
+    // Gradient color state (local to avoid WebGL re-renders on every drag)
     const [localColors, setLocalColors] = useState<string[]>(gradientColors);
+    useEffect(() => { setLocalColors(gradientColors); }, [gradientColors]);
 
-    useEffect(() => {
-        setLocalColors(gradientColors);
-    }, [gradientColors]);
-
-    const handleColorInteractionDrag = (index: number, newColor: string) => {
-        const newLocal = [...localColors];
-        newLocal[index] = newColor;
-        setLocalColors(newLocal);
+    const handleColorDrag = (index: number, newColor: string) => {
+        const next = [...localColors]; next[index] = newColor; setLocalColors(next);
     };
-
-    const handleColorInteractionDrop = (index: number, newColor: string) => {
-        const newColors = [...gradientColors];
-        newColors[index] = newColor;
-        onGradientColorsChange(newColors);
+    const handleColorDrop = (index: number, newColor: string) => {
+        const next = [...gradientColors]; next[index] = newColor; onGradientColorsChange(next);
     };
-
     const handleAddColor = () => {
         if (gradientColors.length >= 6) return;
         onGradientColorsChange([...gradientColors, '#000000']);
     };
-
     const handleRemoveColor = (index: number) => {
         if (gradientColors.length <= 1) return;
-        const newColors = [...gradientColors];
-        newColors.splice(index, 1);
-        onGradientColorsChange(newColors);
+        const next = [...gradientColors]; next.splice(index, 1); onGradientColorsChange(next);
+    };
+    const generateRandomGradient = () => {
+        onGradientColorsChange(gradientColors.map(() =>
+            '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')
+        ));
     };
 
-    const generateRandomGradient = () => {
-        // Generate random colors but keep the same number of colors as currently selected
-        const newColors = gradientColors.map(() => {
-            return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-        });
-        onGradientColorsChange(newColors);
+    // Grading config helpers
+    const applyPreset = (preset: GradingConfig) => {
+        onGradingConfigChange({ ...preset });
     };
+
+    const updateGradePoint = (letter: GradeLetter, scaleKey: 'value5' | 'value4', raw: string) => {
+        const val = parseFloat(raw);
+        if (isNaN(val)) return;
+        onGradingConfigChange({
+            ...gradingConfig,
+            gradePoints: {
+                ...gradingConfig.gradePoints,
+                [letter]: { ...gradingConfig.gradePoints[letter], [scaleKey]: val },
+            },
+            presetName: 'Custom',
+        });
+    };
+
+    const updateScoreRange = (letter: GradeLetter, bound: 'min' | 'max', raw: string) => {
+        const val = parseInt(raw);
+        if (isNaN(val)) return;
+        onGradingConfigChange({
+            ...gradingConfig,
+            scoreRanges: {
+                ...gradingConfig.scoreRanges,
+                [letter]: { ...gradingConfig.scoreRanges[letter], [bound]: val },
+            },
+            presetName: 'Custom',
+        });
+    };
+
+    const resetGrading = () => onGradingConfigChange({ ...DEFAULT_GRADING_CONFIG });
 
     if (!isOpen) return null;
+
+    const scaleKey = scale === '5.0' ? 'value5' : 'value4';
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="absolute inset-0" onClick={onClose} />
 
-            <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-sm sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[80vh] overflow-hidden">
+            <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-sm sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[85vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
                     <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Settings</h2>
@@ -118,7 +147,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
 
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
 
-                    {/* Theme */}
+                    {/* ── Appearance ── */}
                     <section>
                         <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Appearance</h3>
                         <div className="space-y-2">
@@ -149,7 +178,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                         </div>
                     </section>
 
-                    {/* Gradient Customization */}
+                    {/* ── Gradient Colors ── */}
                     {showGradient && (
                         <section>
                             <div className="flex items-center justify-between mb-3">
@@ -158,44 +187,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                                     <RefreshCw size={10} /> Randomize
                                 </button>
                             </div>
-
                             <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 space-y-3">
-
                                 <div className="space-y-2">
                                     {localColors.map((color, index) => (
                                         <div key={index} className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={color}
-                                                onChange={(e) => handleColorInteractionDrag(index, e.target.value)}
-                                                onBlur={(e) => handleColorInteractionDrop(index, e.target.value)} // Commit on release/blur
+                                            <input type="color" value={color}
+                                                onChange={(e) => handleColorDrag(index, e.target.value)}
+                                                onBlur={(e) => handleColorDrop(index, e.target.value)}
                                                 className="size-8 cursor-pointer shrink-0 rounded border-0 p-0 bg-transparent"
-                                                title="Click to choose color"
                                             />
-                                            <input
-                                                type="text"
-                                                value={color.toUpperCase()}
-                                                onChange={(e) => handleColorInteractionDrop(index, e.target.value)}
-                                                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1.5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-shadow"
-                                                placeholder="#FFFFFF"
-                                                maxLength={7}
+                                            <input type="text" value={color.toUpperCase()}
+                                                onChange={(e) => handleColorDrop(index, e.target.value)}
+                                                className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1.5 px-3 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase outline-none focus:ring-1 focus:ring-gray-400 transition-shadow"
+                                                placeholder="#FFFFFF" maxLength={7}
                                             />
-                                            <button
-                                                onClick={() => handleRemoveColor(index)}
-                                                disabled={gradientColors.length <= 1}
-                                                className={`p-1.5 rounded-md transition-colors shrink-0 ${gradientColors.length <= 1 ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
-                                            >
+                                            <button onClick={() => handleRemoveColor(index)} disabled={gradientColors.length <= 1}
+                                                className={`p-1.5 rounded-md transition-colors shrink-0 ${gradientColors.length <= 1 ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}>
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
-
                                 {gradientColors.length < 6 && (
-                                    <button
-                                        onClick={handleAddColor}
-                                        className="w-full py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-1.5"
-                                    >
+                                    <button onClick={handleAddColor} className="w-full py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-1.5">
                                         <Plus size={12} /> Add Color
                                     </button>
                                 )}
@@ -204,32 +218,134 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                         </section>
                     )}
 
-                    {/* View Layout */}
+                    {/* ── Grading System ── */}
+                    <section>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Grading System</h3>
+                            <button onClick={resetGrading} className="text-[10px] font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-100 transition-colors bg-gray-100 dark:bg-gray-700/80 px-2 py-1 rounded-md">
+                                <RefreshCw size={10} /> Reset
+                            </button>
+                        </div>
+
+                        {/* Preset Picker */}
+                        <div className="relative mb-3">
+                            <select
+                                value={gradingConfig.presetName}
+                                onChange={(e) => {
+                                    const preset = GRADING_PRESETS.find(p => p.presetName === e.target.value);
+                                    if (preset) applyPreset(preset);
+                                }}
+                                className="w-full appearance-none bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-400/50 transition-colors"
+                            >
+                                {GRADING_PRESETS.map(p => (
+                                    <option key={p.presetName} value={p.presetName}>{p.presetName}</option>
+                                ))}
+                                {gradingConfig.presetName === 'Custom' && (
+                                    <option value="Custom">Custom</option>
+                                )}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Tab switcher */}
+                        <div className="p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex mb-3">
+                            <button
+                                onClick={() => setGradingTab('scores')}
+                                className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${gradingTab === 'scores' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                                Score Ranges
+                            </button>
+                            <button
+                                onClick={() => setGradingTab('points')}
+                                className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${gradingTab === 'points' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                                Grade Points
+                            </button>
+                        </div>
+
+                        <div className="rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            {gradingTab === 'scores' ? (
+                                <>
+                                    <div className="grid grid-cols-[2rem_1fr_1fr] bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-700 px-3 py-1.5">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Grade</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">Min Score</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">Max Score</span>
+                                    </div>
+                                    {GRADE_LETTERS.map((letter) => (
+                                        <div key={letter} className="grid grid-cols-[2rem_1fr_1fr] items-center px-3 py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                                            <span className="text-sm font-black text-gray-700 dark:text-gray-300">{letter}</span>
+                                            <div className="flex justify-center">
+                                                <input
+                                                    type="number" min={0} max={100}
+                                                    value={gradingConfig.scoreRanges[letter].min}
+                                                    onChange={(e) => updateScoreRange(letter, 'min', e.target.value)}
+                                                    className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
+                                                />
+                                            </div>
+                                            <div className="flex justify-center">
+                                                <input
+                                                    type="number" min={0} max={100}
+                                                    value={gradingConfig.scoreRanges[letter].max}
+                                                    onChange={(e) => updateScoreRange(letter, 'max', e.target.value)}
+                                                    className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 px-3">
+                                        Used when AI scanner detects numerical scores
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-[2rem_1fr_1fr] bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-700 px-3 py-1.5">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Grade</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">5.0 Pts</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">4.0 Pts</span>
+                                    </div>
+                                    {GRADE_LETTERS.map((letter) => (
+                                        <div key={letter} className="grid grid-cols-[2rem_1fr_1fr] items-center px-3 py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                                            <span className={`text-sm font-black ${scale === '5.0' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>{letter}</span>
+                                            <div className="flex justify-center">
+                                                <input
+                                                    type="number" min={0} max={5} step={0.5}
+                                                    value={gradingConfig.gradePoints[letter].value5}
+                                                    onChange={(e) => updateGradePoint(letter, 'value5', e.target.value)}
+                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '5.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50'}`}
+                                                />
+                                            </div>
+                                            <div className="flex justify-center">
+                                                <input
+                                                    type="number" min={0} max={4} step={0.5}
+                                                    value={gradingConfig.gradePoints[letter].value4}
+                                                    onChange={(e) => updateGradePoint(letter, 'value4', e.target.value)}
+                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '4.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50'}`}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 px-3">
+                                        Active scale ({scale}) column is highlighted
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* ── View Layout ── */}
                     <section>
                         <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">View Layout</h3>
                         <div className="p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex">
-                            <button
-                                onClick={() => onViewModeChange('table')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'table'
-                                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                    }`}
-                            >
+                            <button onClick={() => onViewModeChange('table')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                                 Table
                             </button>
-                            <button
-                                onClick={() => onViewModeChange('card')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'card'
-                                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                    }`}
-                            >
+                            <button onClick={() => onViewModeChange('card')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'card' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
                                 Cards
                             </button>
                         </div>
                     </section>
 
-                    {/* Confirmations */}
+                    {/* ── Confirmations ── */}
                     <section>
                         <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Confirmations</h3>
                         <div className="p-3 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -237,18 +353,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode
                                 <div>
                                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 block">Reset Dialogs</span>
                                     <span className="text-[11px] text-gray-400 dark:text-gray-500">
-                                        {suppressedCount > 0
-                                            ? `${suppressedCount} dialog${suppressedCount > 1 ? 's' : ''} suppressed`
-                                            : 'No dialogs suppressed'}
+                                        {suppressedCount > 0 ? `${suppressedCount} dialog${suppressedCount > 1 ? 's' : ''} suppressed` : 'No dialogs suppressed'}
                                     </span>
                                 </div>
                                 <button
                                     onClick={resetConfirmations}
                                     disabled={suppressedCount === 0}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${suppressedCount > 0
-                                        ? 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                        : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                                        }`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${suppressedCount > 0 ? 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600' : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
                                 >
                                     Reset
                                 </button>

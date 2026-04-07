@@ -1,4 +1,7 @@
-import { GradeOption, Year } from './types';
+import { GradeOption, GradingConfig, GradeLetter, Year } from './types';
+
+// ─── Legacy grade options (used for backwards-compat display) ───────────────
+
 
 export const GRADE_OPTIONS: GradeOption[] = [
   { letter: 'A', value5: 5.0, value4: 4.0 },
@@ -38,3 +41,65 @@ export const getInitialData = (): Year[] => {
     },
   ];
 };
+
+// ─── Grading Config Presets ──────────────────────────────────────────────────
+
+const GRADE_LETTERS: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+/** NUC/JAMB standard used by most Nigerian federal & state universities */
+export const NUC_STANDARD_CONFIG: GradingConfig = {
+  presetName: 'NUC Standard (Nigerian)',
+  gradePoints: {
+    A: { value5: 5.0, value4: 4.0 },
+    B: { value5: 4.0, value4: 3.0 },
+    C: { value5: 3.0, value4: 2.0 },
+    D: { value5: 2.0, value4: 1.0 },
+    E: { value5: 1.0, value4: 0.0 },
+    F: { value5: 0.0, value4: 0.0 },
+  },
+  scoreRanges: {
+    A: { min: 70, max: 100 },
+    B: { min: 60, max: 69 },
+    C: { min: 50, max: 59 },
+    D: { min: 45, max: 49 },
+    E: { min: 40, max: 44 },
+    F: { min: 0,  max: 39 },
+  },
+};
+
+/** Covenant University / private university style — higher bar for A */
+export const COVENANT_STYLE_CONFIG: GradingConfig = {
+  presetName: 'Covenant / Private University',
+  gradePoints: {
+    A: { value5: 5.0, value4: 4.0 },
+    B: { value5: 4.0, value4: 3.0 },
+    C: { value5: 3.0, value4: 2.0 },
+    D: { value5: 2.0, value4: 1.0 },
+    E: { value5: 1.0, value4: 0.0 },
+    F: { value5: 0.0, value4: 0.0 },
+  },
+  scoreRanges: {
+    A: { min: 75, max: 100 },
+    B: { min: 65, max: 74 },
+    C: { min: 55, max: 64 },
+    D: { min: 45, max: 54 },
+    E: { min: 40, max: 44 },
+    F: { min: 0,  max: 39 },
+  },
+};
+
+export const GRADING_PRESETS: GradingConfig[] = [
+  NUC_STANDARD_CONFIG,
+  COVENANT_STYLE_CONFIG,
+];
+
+export const DEFAULT_GRADING_CONFIG: GradingConfig = NUC_STANDARD_CONFIG;
+
+/** Loads grading config from localStorage or returns default */
+export const getGradingConfig = (): GradingConfig => {
+  try {
+    const saved = localStorage.getItem('grading_config');
+    if (saved) return JSON.parse(saved) as GradingConfig;
+  } catch { }
+  return DEFAULT_GRADING_CONFIG;
+};

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Plus, FileDown, Trash2, X, Info, ScanLine, Settings, Github } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { Year, GradingScale, Course } from './types';
-import { getInitialData } from './constants';
-import { calculateOverallStats, calculateSemesterStats, generateId, getGradeValue, getClassOfDegree, getGradeColorRGB, createEmptyCourses } from './utils';
+import { Year, GradingScale, Course, GradingConfig } from './types';
+import { getInitialData, getGradingConfig } from './constants';
+import { calculateOverallStats, calculateSemesterStats, generateId, getClassOfDegree, createEmptyCourses } from './utils';
 import SemesterSection from './components/SemesterSection';
 import Footer from './components/Footer';
 import GradingInfoModal from './components/GradingInfoModal';
@@ -54,6 +52,14 @@ function App() {
         localStorage.setItem('view_mode', mode);
     };
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Grading config
+    const [gradingConfig, setGradingConfig] = useState<GradingConfig>(() => getGradingConfig());
+
+    const handleGradingConfigChange = (config: GradingConfig) => {
+        setGradingConfig(config);
+        try { localStorage.setItem('grading_config', JSON.stringify(config)); } catch { }
+    };
 
     const [showGradient, setShowGradient] = useState<boolean>(() => {
         try {
@@ -277,287 +283,204 @@ function App() {
         });
     };
 
-    // PDF Export Logic — Premium Design v3
+    // PDF Export — window.print() with Scholar Report HTML design
     const handleExportPDF = () => {
-        const doc = new jsPDF();
-        const pw = doc.internal.pageSize.getWidth();
-        const ph = doc.internal.pageSize.getHeight();
-        const m = 22;
-
-        // ── Design Tokens ──
-        const NAVY: [number, number, number] = [15, 23, 42];
-        const INDIGO: [number, number, number] = [79, 70, 229];
-        const WHITE: [number, number, number] = [255, 255, 255];
-        const DARK: [number, number, number] = [30, 41, 59];
-        const MED: [number, number, number] = [100, 116, 139];
-        const LIGHT_TEXT: [number, number, number] = [148, 163, 184];
-        const RULE: [number, number, number] = [226, 232, 240];
-
-        // Filter data
-        const fd = data.map(y => ({
-            ...y,
-            semesters: y.semesters.filter(s => s.courses.some(c => (Number(c.unit) || 0) > 0))
-        })).filter(y => y.semesters.length > 0 && !y.isExcluded);
+        const fd = data
+            .map(y => ({
+                ...y,
+                semesters: y.semesters.filter(s => s.courses.some(c => (Number(c.unit) || 0) > 0))
+            }))
+            .filter(y => y.semesters.length > 0 && !y.isExcluded);
 
         if (fd.length === 0) {
-            alert("No data to export! Add courses with units first.");
+            alert('No data to export! Add courses with units first.');
             return;
         }
 
-        const ov = calculateOverallStats(data, scale);
+        const ov = calculateOverallStats(data, scale, gradingConfig);
         const deg = getClassOfDegree(ov.cgpa, scale);
-        const cRGB = getGradeColorRGB(ov.cgpa, scale);
-
-        let fileNum = 1;
-        try {
-            const saved = localStorage.getItem('pdf_export_count');
-            fileNum = saved ? parseInt(saved) + 1 : 1;
-            localStorage.setItem('pdf_export_count', String(fileNum));
-        } catch { }
-
         const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-        // ══════════════════════════════
-        //  COVER PAGE
-        // ══════════════════════════════
+        const buildTableRows = (courses: Course[]): string =>
+            courses
+                .filter(c => (Number(c.unit) || 0) > 0)
+                .map((c, i) => `
+                  <tr>
+                    <td style="padding: 6px 8px; color: #717973; font-family: 'Roboto Mono', monospace; font-size: 10px;">${String(i + 1).padStart(2, '0')}</td>
+                    <td style="padding: 6px 8px; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 10px;">${c.code || '—'}</td>
+                    <td style="padding: 6px 8px; font-size: 10px;">${c.title || '—'}</td>
+                    <td style="padding: 6px 8px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 10px;">${c.unit}</td>
+                    <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: #426920; font-size: 10px; font-family: 'Epilogue', sans-serif;">${c.grade}</td>
+                  </tr>`)
+                .join('');
 
-        // Navy background
-        doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
-        doc.rect(0, 0, pw, ph, 'F');
+        const buildSemesterCards = (): string =>
+            fd.flatMap(year =>
+                year.semesters.map(sem => {
+                    const ss = calculateSemesterStats(sem.courses, scale, gradingConfig);
+                    return `
+                      <div style="position: relative; background: white; border-radius: 0 8px 8px 0; border: 1px solid rgba(0,46,2,0.05); border-left: none; margin-bottom: 12px; break-inside: avoid;">
+                        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: #426920; border-radius: 6px 0 0 6px;"></div>
+                        <div style="padding: 12px 12px 12px 20px;">
+                          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                            <h4 style="font-family: 'Epilogue', sans-serif; font-weight: 900; color: #002e02; text-transform: uppercase; letter-spacing: -0.025em; font-size: 14px; margin: 0;">${year.name} — ${sem.name}</h4>
+                            <div style="text-align: right;">
+                              <span style="font-size: 7px; color: #717973; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.2em; display: block; line-height: 1;">Semester GPA</span>
+                              <span style="font-size: 18px; font-weight: 900; color: #002e02; font-family: 'Epilogue', sans-serif;">${ss.gpa.toFixed(2)}</span>
+                            </div>
+                          </div>
+                          <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                            <thead>
+                              <tr style="border-bottom: 1px solid rgba(0,46,2,0.3);">
+                                <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase; width: 32px;">SN</th>
+                                <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase;">Code</th>
+                                <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase;">Title</th>
+                                <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase; text-align: center;">Units</th>
+                                <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase; text-align: right;">Grade</th>
+                              </tr>
+                            </thead>
+                            <tbody style="border-collapse: collapse;">
+                              ${buildTableRows(sem.courses)}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>`;
+                })
+            ).join('');
 
-        // Left accent bar
-        doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.rect(0, 0, 5, ph, 'F');
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;700;900&family=Manrope:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    @page { size: A4; margin: 0; }
+    @media print {
+      body { background: none !important; }
+      .no-print { display: none !important; }
+      .a4-page { margin: 0 !important; box-shadow: none !important; }
+      .page-break { page-break-after: always; break-after: page; }
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Manrope', sans-serif; background: #e5e7eb; margin: 0; padding: 20px 0; color: #002e02; }
+    .a4-page { width: 210mm; min-height: 297mm; margin: 10px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); position: relative; overflow: hidden; }
+    .cover-page { background: #F9FAF7; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40mm 30mm; position: relative; }
+    .report-page { padding: 12mm; display: flex; flex-direction: column; }
+    .no-print-bar { text-align: center; margin-bottom: 16px; font-family: Manrope, sans-serif; font-size: 13px; color: #717973; padding: 8px; }
+    .print-btn { background: #002e02; color: white; border: none; padding: 12px 24px; border-radius: 9999px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 20px; display: flex; width: fit-content; margin: 0 auto 16px; }
+    .geo-line { position: absolute; background: rgba(0,46,2,0.08); }
+    .geo-node { position: absolute; width: 6px; height: 6px; background: #002e02; border-radius: 50%; }
+    .data-line { position: absolute; width: 1px; background: linear-gradient(to bottom, transparent, rgba(66,105,32,0.35), transparent); }
+    tbody tr:not(:last-child) td { border-bottom: 1px solid rgba(0,46,2,0.08); }
+  </style>
+</head>
+<body>
 
-        // Top-right decorative circle
-        doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.setGState(doc.GState({ opacity: 0.12 }));
-        doc.circle(pw + 15, -15, 55, 'F');
-        doc.setGState(doc.GState({ opacity: 1 }));
+<div class="no-print">
+  <div class="no-print-bar">Your Scholar Report is ready. Click <strong>Save as PDF</strong> to download.</div>
+  <button class="print-btn" onclick="window.print()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Save as PDF
+  </button>
+</div>
 
-        // Brand label
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.text('CGPA CALCULATOR', m, 28);
-        doc.setDrawColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.setLineWidth(0.4);
-        doc.line(m, 31, m + 30, 31);
+<!-- COVER PAGE -->
+<div class="a4-page cover-page page-break">
+  <!-- Grid lines -->
+  <div class="geo-line" style="width: 100%; height: 1px; top: 25%; left: 0;"></div>
+  <div class="geo-line" style="width: 100%; height: 1px; bottom: 25%; left: 0;"></div>
+  <div class="geo-line" style="height: 100%; width: 1px; left: 33.33%; top: 0;"></div>
+  <div class="geo-line" style="height: 100%; width: 1px; right: 33.33%; top: 0;"></div>
+  <div class="geo-node" style="top: 25%; left: 33.33%; transform: translate(-50%, -50%);"></div>
+  <div class="geo-node" style="top: 25%; right: 33.33%; transform: translate(50%, -50%);"></div>
+  <div class="geo-node" style="bottom: 25%; left: 33.33%; transform: translate(-50%, 50%);"></div>
+  <div class="geo-node" style="bottom: 25%; right: 33.33%; transform: translate(50%, 50%);"></div>
+  <div class="data-line" style="height: 16rem; left: 20%; top: 0;"></div>
+  <div class="data-line" style="height: 12rem; right: 25%; bottom: 0;"></div>
+  <!-- Wireframe shapes -->
+  <div style="position: absolute; width: 200px; height: 200px; top: 10%; left: 8%; border: 2px solid rgba(0,46,2,0.12); transform: rotateX(45deg) rotateZ(45deg);"></div>
+  <div style="position: absolute; width: 160px; height: 160px; bottom: 12%; right: 8%; clip-path: polygon(50% 0%,0% 100%,100% 100%); background: linear-gradient(to top, rgba(0,46,2,0.12), transparent);"></div>
 
-        // Title — SCHOLAR
-        const ty = ph * 0.28;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(52);
-        doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
-        doc.text('SCHOLAR', m, ty);
+  <!-- Content -->
+  <div style="position: relative; z-index: 10;">
+    <div style="margin-bottom: 24px; display: flex; justify-content: center;">
+      <div style="width: 64px; height: 64px; border: 1px solid rgba(0,46,2,0.3); display: flex; align-items: center; justify-content: center; position: relative;">
+        <div style="width: 24px; height: 24px; border: 2px solid rgba(0,46,2,0.4); display: flex; align-items: center; justify-content: center;">
+          <div style="width: 8px; height: 8px; background: rgba(0,46,2,0.6);"></div>
+        </div>
+      </div>
+    </div>
+    <h1 style="font-family: 'Epilogue', sans-serif; font-size: 72px; font-weight: 900; color: #002e02; line-height: 0.9; letter-spacing: -0.05em; text-transform: uppercase; margin: 0;">SCHOLAR<br/>REPORT</h1>
+    <div style="margin-top: 32px; font-size: 13px; color: #717973; font-family: 'Roboto Mono', monospace; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.7;">${dateStr}</div>
+    <div style="margin-top: 48px; display: flex; align-items: center; justify-content: center; gap: 16px;">
+      <div style="height: 1px; width: 64px; background: rgba(0,46,2,0.2);"></div>
+      <span style="font-family: 'Roboto Mono', monospace; font-weight: 700; color: #002e02; letter-spacing: 0.5em; font-size: 11px; text-transform: uppercase;">CGPA CALCULATOR</span>
+      <div style="height: 1px; width: 64px; background: rgba(0,46,2,0.2);"></div>
+    </div>
+  </div>
+</div>
 
-        // Title — REPORT on indigo bg
-        const rY = ty + 14;
-        doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.roundedRect(m - 4, rY - 16, 108, 22, 3, 3, 'F');
-        doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
-        doc.setFontSize(52);
-        doc.text('REPORT', m, rY);
+<!-- REPORT PAGE -->
+<div class="a4-page report-page">
+  <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid rgba(0,46,2,0.2); padding-bottom: 8px;">
+    <div>
+      <h2 style="font-family: 'Epilogue', sans-serif; font-size: 24px; font-weight: 900; color: #002e02; text-transform: uppercase; letter-spacing: -0.025em; margin: 0;">Report Details</h2>
+    </div>
+    <div style="text-align: right;">
+      <p style="font-size: 8px; font-family: 'Roboto Mono', monospace; color: #717973; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">Scale</p>
+      <p style="font-size: 10px; font-family: 'Roboto Mono', monospace; font-weight: 700; color: #002e02; margin: 0;">${scale} POINT SYSTEM</p>
+    </div>
+  </header>
 
-        // Subtitle
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9.5);
-        doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
-        doc.text('A comprehensive overview of your academic', m, rY + 20);
-        doc.text('performance across all semesters and years.', m, rY + 27);
+  <!-- Summary Card -->
+  <section style="margin-bottom: 16px;">
+    <div style="background: #f3f4f1; border-radius: 16px; padding: 8px; border: 1px solid rgba(0,46,2,0.1); display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+      <div style="background: #002e02; color: white; padding: 12px; border-radius: 12px; position: relative; overflow: hidden; width: 220px; text-align: center; flex-shrink: 0;">
+        <div style="position: absolute; right: -16px; top: -16px; width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.1);"></div>
+        <p style="font-size: 8px; font-family: 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.8; margin: 0 0 2px;">Cumulative CGPA</p>
+        <div style="font-size: 36px; font-weight: 900; font-family: 'Epilogue', sans-serif; line-height: 1;">${ov.cgpa.toFixed(2)}</div>
+        <div style="margin-top: 4px; display: inline-block; padding: 2px 8px; background: #426920; border-radius: 9999px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${deg}</div>
+      </div>
+      <div style="display: flex; flex: 1; justify-content: space-around; align-items: center; padding: 0 16px;">
+        <div style="text-align: center;">
+          <p style="font-size: 8px; color: #717973; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 2px; font-family: 'Roboto Mono', monospace;">Total Credits</p>
+          <div style="font-size: 22px; font-weight: 900; color: #002e02; font-family: 'Epilogue', sans-serif;">${ov.grandTotalUnits}</div>
+        </div>
+        <div style="width: 1px; height: 24px; background: rgba(0,46,2,0.2);"></div>
+        <div style="text-align: center;">
+          <p style="font-size: 8px; color: #717973; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 2px; font-family: 'Roboto Mono', monospace;">Grading Scale</p>
+          <div style="font-size: 22px; font-weight: 900; color: #002e02; font-family: 'Epilogue', sans-serif;">${scale} Point</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        // Separator
-        doc.setDrawColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.setGState(doc.GState({ opacity: 0.4 }));
-        doc.setLineWidth(0.4);
-        doc.line(m, rY + 37, pw - m, rY + 37);
-        doc.setGState(doc.GState({ opacity: 1 }));
+  <!-- Semester Breakdown -->
+  <section style="flex: 1;">
+    <h3 style="font-size: 9px; font-weight: 700; color: #002e02; text-transform: uppercase; letter-spacing: 0.2em; margin: 0 0 8px; font-family: 'Manrope', sans-serif; display: flex; align-items: center; gap: 12px;">
+      Academic Performance Breakdown <span style="height: 1px; flex: 1; background: rgba(0,46,2,0.2); display: inline-block;"></span>
+    </h3>
+    ${buildSemesterCards()}
+  </section>
 
-        // Stats cards on cover — 2x2
-        const sY = rY + 47;
-        const sw = (pw - m * 2 - 8) / 2;
+  <footer style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,46,2,0.1); display: flex; justify-content: center;">
+    <p style="font-size: 7px; font-family: 'Roboto Mono', monospace; font-weight: 700; color: rgba(0,46,2,0.4); text-transform: uppercase; letter-spacing: 0.3em; margin: 0;">CGPA CALCULATOR &mdash; ${dateStr}</p>
+  </footer>
+</div>
 
-        const coverCard = (x: number, y: number, w: number, label: string, value: string, accent: [number, number, number]) => {
-            // Card background (subtle white tint)
-            doc.setFillColor(255, 255, 255);
-            doc.setGState(doc.GState({ opacity: 0.06 }));
-            doc.roundedRect(x, y, w, 24, 3, 3, 'F');
-            doc.setGState(doc.GState({ opacity: 1 }));
-            // Border
-            doc.setDrawColor(accent[0], accent[1], accent[2]);
-            doc.setGState(doc.GState({ opacity: 0.35 }));
-            doc.setLineWidth(0.3);
-            doc.roundedRect(x, y, w, 24, 3, 3, 'S');
-            doc.setGState(doc.GState({ opacity: 1 }));
-            // Left accent bar
-            doc.setFillColor(accent[0], accent[1], accent[2]);
-            doc.roundedRect(x, y + 4, 3, 16, 1.5, 1.5, 'F');
-            // Label
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(6.5);
-            doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
-            doc.text(label.toUpperCase(), x + 8, y + 9);
-            // Value
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
-            doc.text(value, x + 8, y + 20);
-        };
+</body>
+</html>`;
 
-        coverCard(m, sY, sw, 'Cumulative CGPA', ov.cgpa.toFixed(2), cRGB);
-        coverCard(m + sw + 8, sY, sw, 'Classification', deg, INDIGO);
-        coverCard(m, sY + 30, sw, 'Total Credits', ov.grandTotalUnits.toString(), INDIGO);
-        coverCard(m + sw + 8, sY + 30, sw, 'Grading Scale', `${scale} Point`, cRGB);
-
-        // Cover footer
-        const fY = ph - 20;
-        doc.setDrawColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-        doc.setGState(doc.GState({ opacity: 0.3 }));
-        doc.setLineWidth(0.3);
-        doc.line(m, fY, pw - m, fY);
-        doc.setGState(doc.GState({ opacity: 1 }));
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
-        doc.text('CGPA Calculator  \u00b7  Scholar Report', m, fY + 7);
-        doc.text(dateStr, pw - m - doc.getTextWidth(dateStr), fY + 7);
-
-        // ══════════════════════════════
-        //  INTERIOR PAGE HELPERS
-        // ══════════════════════════════
-
-        const setupPage = () => {
-            doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
-            doc.rect(0, 0, pw, ph, 'F');
-            // Indigo top line
-            doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-            doc.rect(0, 0, pw, 2, 'F');
-            // Left accent
-            doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-            doc.rect(0, 0, 3, ph, 'F');
-        };
-
-        const drawRule = (y: number) => {
-            doc.setDrawColor(RULE[0], RULE[1], RULE[2]);
-            doc.setLineWidth(0.3);
-            doc.line(m, y, pw - m, y);
-        };
-
-        // ══════════════════════════════
-        //  PAGE 2 — Academic History only (stats already on cover)
-        // ══════════════════════════════
-        doc.addPage();
-        setupPage();
-
-        let cy = 16;
-
-        // Section title
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-        doc.text('ACADEMIC HISTORY', m, cy);
-        cy += 3;
-        drawRule(cy);
-        cy += 8;
-
-        fd.forEach((year) => {
-            if (cy > ph - 40) { doc.addPage(); setupPage(); cy = 16; }
-
-            // Year label
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-            doc.text(year.name.toUpperCase(), m, cy);
-            doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
-            doc.rect(m, cy + 2, 16, 1, 'F');
-            cy += 10;
-
-            year.semesters.forEach((sem) => {
-                const ss = calculateSemesterStats(sem.courses, scale);
-                const sRGB = getGradeColorRGB(ss.gpa, scale);
-                if (cy > ph - 50) { doc.addPage(); setupPage(); cy = 16; }
-
-                // Semester name + GPA pill
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
-                doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-                doc.text(sem.name, m, cy);
-
-                const semNameW = doc.getTextWidth(sem.name);
-                const gpaLabel = `${ss.gpa.toFixed(2)}`;
-                doc.setFontSize(7);
-                const gpaW = doc.getTextWidth(gpaLabel) + 6;
-                doc.setFillColor(sRGB[0], sRGB[1], sRGB[2]);
-                doc.roundedRect(m + semNameW + 4, cy - 4, gpaW, 5.5, 2.5, 2.5, 'F');
-                doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
-                doc.setFont('helvetica', 'bold');
-                doc.text(gpaLabel, m + semNameW + 7, cy - 0.5);
-                cy += 5;
-
-                const tbody = sem.courses
-                    .filter(c => (Number(c.unit) || 0) > 0)
-                    .map((c, i) => [
-                        (i + 1).toString(),
-                        c.code.toUpperCase() || '-',
-                        c.title || '-',
-                        c.unit.toString(),
-                        c.grade,
-                        ((Number(c.unit) || 0) * getGradeValue(c.grade, scale)).toFixed(1)
-                    ]);
-
-                autoTable(doc, {
-                    startY: cy,
-                    head: [['#', 'CODE', 'TITLE', 'UNIT', 'GR', 'PTS']],
-                    body: tbody,
-                    theme: 'plain',
-                    margin: { left: m, right: m },
-                    headStyles: {
-                        fillColor: [248, 250, 252],
-                        textColor: MED,
-                        fontStyle: 'bold',
-                        halign: 'left',
-                        fontSize: 6.5,
-                        cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }
-                    },
-                    bodyStyles: {
-                        textColor: DARK,
-                        fontSize: 7.5,
-                        lineColor: RULE,
-                        lineWidth: 0.15,
-                        cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }
-                    },
-                    alternateRowStyles: { fillColor: [248, 250, 252] },
-                    columnStyles: {
-                        0: { cellWidth: 8, halign: 'center', textColor: LIGHT_TEXT },
-                        1: { cellWidth: 20, fontStyle: 'bold' },
-                        2: { cellWidth: 'auto' },
-                        3: { cellWidth: 10, halign: 'center' },
-                        4: { cellWidth: 10, halign: 'center', fontStyle: 'bold', textColor: sRGB },
-                        5: { cellWidth: 12, halign: 'right' }
-                    },
-                    styles: { font: 'helvetica', fillColor: WHITE }
-                });
-
-                // @ts-ignore
-                cy = doc.lastAutoTable.finalY + 8;
-            });
-            cy += 4;
-        });
-
-        // Page footers (interior pages only)
-        const tp = doc.internal.pages.length - 1;
-        for (let i = 2; i <= tp; i++) {
-            doc.setPage(i);
-            drawRule(ph - 12);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(6);
-            doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
-            doc.text('CGPA Calculator  \u00b7  Scholar Report', m, ph - 7);
-            const pn = `${i - 1} / ${tp - 1}`;
-            doc.text(pn, pw - m - doc.getTextWidth(pn), ph - 7);
+        const win = window.open('', '_blank', 'width=900,height=700');
+        if (!win) {
+            alert('Could not open print window. Please allow popups for this site.');
+            return;
         }
-
-        doc.save(`Scholar_Report_${fileNum}.pdf`);
+        win.document.write(html);
+        win.document.close();
     };
 
     const addYear = () => {
@@ -666,7 +589,7 @@ function App() {
 
     // Derived State
     const activeYear = data.find((y) => y.id === activeYearId) || data[0];
-    const overallStats = calculateOverallStats(data, scale);
+    const overallStats = calculateOverallStats(data, scale, gradingConfig);
 
     return (
         <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50/50 dark:bg-[#0d0d14]/80 transition-colors">
@@ -874,6 +797,7 @@ function App() {
                 onImport={handleAIImport}
                 semesters={activeYear.semesters}
                 viewMode={viewMode}
+                gradingConfig={gradingConfig}
             />
 
             <SettingsModal
@@ -885,6 +809,9 @@ function App() {
                 onShowGradientChange={handleShowGradientChange}
                 gradientColors={gradientColors}
                 onGradientColorsChange={handleGradientColorsChange}
+                gradingConfig={gradingConfig}
+                onGradingConfigChange={handleGradingConfigChange}
+                scale={scale}
             />
         </div>
     );

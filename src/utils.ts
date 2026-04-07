@@ -1,17 +1,39 @@
 import { GRADE_OPTIONS } from './constants';
-import { Course, GradingScale, Year } from './types';
+import { Course, GradingConfig, GradeLetter, GradingScale, Year } from './types';
 
 export const generateId = (): string => {
   return Math.random().toString(36).substr(2, 9);
 };
 
-export const getGradeValue = (grade: string, scale: GradingScale): number => {
+/**
+ * Returns the point value for a grade letter.
+ * If a custom GradingConfig is provided, uses its grade point values.
+ * Falls back to the legacy GRADE_OPTIONS table if not provided.
+ */
+export const getGradeValue = (grade: string, scale: GradingScale, config?: GradingConfig): number => {
+  if (config) {
+    const entry = config.gradePoints[grade as GradeLetter];
+    if (entry) return scale === '5.0' ? entry.value5 : entry.value4;
+  }
   const option = GRADE_OPTIONS.find((g) => g.letter === grade);
   if (!option) return 0;
   return scale === '5.0' ? option.value5 : option.value4;
 };
 
-export const calculateSemesterStats = (courses: Course[], scale: GradingScale) => {
+/**
+ * Converts a numerical score to a grade letter using the configured score ranges.
+ * Grades are checked in order A→F and the first matching range wins.
+ */
+export const scoreToGrade = (score: number, config: GradingConfig): GradeLetter => {
+  const letters: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
+  for (const letter of letters) {
+    const range = config.scoreRanges[letter];
+    if (score >= range.min && score <= range.max) return letter;
+  }
+  return 'F';
+};
+
+export const calculateSemesterStats = (courses: Course[], scale: GradingScale, config?: GradingConfig) => {
   let totalUnits = 0;
   let totalPoints = 0;
 
@@ -19,7 +41,7 @@ export const calculateSemesterStats = (courses: Course[], scale: GradingScale) =
     const unit = Number(course.unit) || 0;
     if (unit > 0) {
       totalUnits += unit;
-      const point = getGradeValue(course.grade, scale);
+      const point = getGradeValue(course.grade, scale, config);
       totalPoints += unit * point;
     }
   });
@@ -29,15 +51,15 @@ export const calculateSemesterStats = (courses: Course[], scale: GradingScale) =
   return { totalUnits, totalPoints, gpa };
 };
 
-export const calculateOverallStats = (years: Year[], scale: GradingScale) => {
+export const calculateOverallStats = (years: Year[], scale: GradingScale, config?: GradingConfig) => {
   let grandTotalUnits = 0;
   let grandTotalPoints = 0;
 
   years.forEach((year) => {
-    if (year.isExcluded) return; // Skip excluded years
+    if (year.isExcluded) return;
 
     year.semesters.forEach((semester) => {
-      const stats = calculateSemesterStats(semester.courses, scale);
+      const stats = calculateSemesterStats(semester.courses, scale, config);
       grandTotalUnits += stats.totalUnits;
       grandTotalPoints += stats.totalPoints;
     });
@@ -85,24 +107,23 @@ export const getGradeColor = (cgpa: number, scale: GradingScale): string => {
 };
 
 export const getGradeColorRGB = (cgpa: number, scale: GradingScale): [number, number, number] => {
-  if (cgpa === 0) return [156, 163, 175]; // Gray 400
+  if (cgpa === 0) return [156, 163, 175];
 
   if (scale === '5.0') {
-    if (cgpa >= 4.50) return [5, 150, 105];   // Emerald 600
-    if (cgpa >= 3.50) return [13, 148, 136];   // Teal 600
-    if (cgpa >= 2.40) return [217, 119, 6];    // Amber 600
-    if (cgpa >= 1.50) return [234, 88, 12];    // Orange 600
-    if (cgpa >= 1.00) return [225, 29, 72];    // Rose 600
-    return [220, 38, 38]; // Red 600
+    if (cgpa >= 4.50) return [5, 150, 105];
+    if (cgpa >= 3.50) return [13, 148, 136];
+    if (cgpa >= 2.40) return [217, 119, 6];
+    if (cgpa >= 1.50) return [234, 88, 12];
+    if (cgpa >= 1.00) return [225, 29, 72];
+    return [220, 38, 38];
   } else {
-    if (cgpa >= 3.50) return [5, 150, 105];    // Emerald 600
-    if (cgpa >= 3.00) return [13, 148, 136];   // Teal 600
-    if (cgpa >= 2.00) return [217, 119, 6];    // Amber 600
-    if (cgpa >= 1.00) return [234, 88, 12];    // Orange 600
-    return [220, 38, 38]; // Red 600
+    if (cgpa >= 3.50) return [5, 150, 105];
+    if (cgpa >= 3.00) return [13, 148, 136];
+    if (cgpa >= 2.00) return [217, 119, 6];
+    if (cgpa >= 1.00) return [234, 88, 12];
+    return [220, 38, 38];
   }
 };
-
 
 export const createEmptyCourses = (count: number) =>
   Array.from({ length: count }).map(() => ({
