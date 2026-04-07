@@ -136,9 +136,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="absolute inset-0" onClick={onClose} />
 
-            <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-sm sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="bg-white dark:bg-[#1a1a24] border border-gray-200 dark:border-gray-800 w-full sm:rounded-2xl sm:max-w-sm sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[85vh] overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111118]">
                     <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Settings</h2>
                     <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 transition-colors">
                         <X size={18} />
@@ -311,7 +311,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     type="number" min={0} max={5} step={0.5}
                                                     value={gradingConfig.gradePoints[letter].value5}
                                                     onChange={(e) => updateGradePoint(letter, 'value5', e.target.value)}
-                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '5.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50'}`}
+                                                    disabled={scale !== '5.0'}
+                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '5.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'}`}
                                                 />
                                             </div>
                                             <div className="flex justify-center">
@@ -319,7 +320,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     type="number" min={0} max={4} step={0.5}
                                                     value={gradingConfig.gradePoints[letter].value4}
                                                     onChange={(e) => updateGradePoint(letter, 'value4', e.target.value)}
-                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '4.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50'}`}
+                                                    disabled={scale !== '4.0'}
+                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '4.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'}`}
                                                 />
                                             </div>
                                         </div>

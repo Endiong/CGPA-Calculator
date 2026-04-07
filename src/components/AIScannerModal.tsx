@@ -129,12 +129,33 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     }
     const reader = new FileReader();
     reader.onloadend = () => {
-      const base64 = reader.result as string;
-      setImagePreview(base64);
-      scanDocument(base64.split(',')[1], file.type);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1500;
+        if (width > height && width > maxDim) {
+          height = Math.round(height * maxDim / width);
+          width = maxDim;
+        } else if (height > maxDim) {
+          width = Math.round(width * maxDim / height);
+          height = maxDim;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setImagePreview(dataUrl);
+        scanDocument(dataUrl.split(',')[1], 'image/jpeg');
+      };
+      img.onerror = () => setError('Failed to read image file.');
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
+
 
   // ── AI Scanning ──
   const scanDocument = async (base64Data: string, mimeType: string) => {
@@ -225,9 +246,10 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
       setExtractedCourses(courses);
       setStep('review');
     } catch (err: any) {
+      console.error('AI Scanner Error:', err);
       let msg = err.message || 'Failed to analyze document.';
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-        msg = 'Network error — check your internet connection and try again.';
+        msg = 'Connection error. The image might be too large or your internet connection is unstable.';
       } else if (msg.includes('API key') || msg.includes('API_KEY')) {
         const provider = import.meta.env.VITE_GEMINI_API_KEY ? 'VITE_GEMINI_API_KEY' : 'VITE_GROQ_API_KEY';
         msg = `API key issue. Make sure ${provider} is set in your .env.local file.`;
@@ -294,10 +316,10 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh] transition-colors">
+      <div className="bg-white dark:bg-[#1a1a24] border border-gray-200 dark:border-gray-800 w-full sm:rounded-2xl sm:max-w-lg sm:mx-4 rounded-t-2xl overflow-hidden shadow-2xl relative z-10 flex flex-col max-h-[92vh] sm:max-h-[85vh] transition-colors">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111118]">
           <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
             {step === 'review' ? 'Review Courses' : 'Scan Document'}
           </h2>

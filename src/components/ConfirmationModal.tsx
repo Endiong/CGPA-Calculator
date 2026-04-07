@@ -44,21 +44,20 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <div className="absolute inset-0" onClick={onClose} />
             <div
-                className="bg-white/90 dark:bg-[#1a1a24]/90 backdrop-blur-xl rounded-xl shadow-2xl max-w-md w-full overflow-hidden relative z-10 transition-colors"
+                className="bg-white dark:bg-[#1a1a24] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden relative z-10 transition-colors"
                 role="dialog"
                 aria-modal="true"
             >
-                <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{title}</h3>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors p-1"
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
-
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111118]">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors p-1"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+                <div className="p-5 pt-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-5 leading-relaxed">
                         {message}
                     </p>
