@@ -4,8 +4,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GPA Calculator</title>
-  <meta name="description" content="Calculate your CGPA easily with this modern academic performance tracker." />
+
+  <!-- Primary SEO -->
+  <title>CGPA Calculator — Track & Calculate Your Academic Performance</title>
+  <meta name="description" content="Free CGPA Calculator for Nigerian university students. Calculate your cumulative GPA, track semesters, scan results with AI, and export professional PDF reports." />
+  <meta name="keywords" content="CGPA calculator, GPA calculator, Nigerian university, academic performance, semester GPA, cumulative GPA, result checker, transcript, 5.0 scale, 4.0 scale" />
+  <meta name="author" content="Endiong" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0f172a" />
+
+  <!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CGPA Calculator — Track Your Academic Performance" />
+  <meta property="og:description" content="Free CGPA calculator for university students. AI-powered result scanning, semester tracking, and professional PDF export." />
+  <meta property="og:site_name" content="CGPA Calculator" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CGPA Calculator — Track Your Academic Performance" />
+  <meta name="twitter:description" content="Free CGPA calculator for university students. AI-powered result scanning, semester tracking, and professional PDF export." />
+
+  <!-- Mobile App -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="CGPA Calculator" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
@@ -83,6 +105,18 @@
       appearance: textfield;
     }
   </style>
+  <!-- Theme: apply immediately to prevent flash of wrong theme -->
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme');
+      if (t === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (!t) localStorage.setItem('theme', 'light');
+      }
+    })();
+  </script>
 </head>
 
 <body class="bg-gray-50 dark:bg-[#0d0d14] text-gray-900 dark:text-gray-100 overflow-hidden transition-colors">

@@ -14,8 +14,9 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, viewMode, onViewModeChange, showGradient, onShowGradientChange, gradientColors, onGradientColorsChange }) => {
     const [isDark, setIsDark] = useState(() => {
+        // Read from the actual DOM class — always accurate regardless of localStorage state
         try {
-            return localStorage.getItem('theme') === 'dark';
+            return document.documentElement.classList.contains('dark');
         } catch { return false; }
     });
 

@@ -79,14 +79,16 @@ function App() {
         localStorage.setItem('gradient_colors', JSON.stringify(colors));
     };
 
-    // Dark mode initialization
+    // Dark mode initialization — new users always start in light mode
     useEffect(() => {
         try {
             const theme = localStorage.getItem('theme');
-            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
             } else {
+                // Default to light mode for new users (no saved theme)
                 document.documentElement.classList.remove('dark');
+                if (!theme) localStorage.setItem('theme', 'light');
             }
         } catch { }
     }, []);
@@ -275,20 +277,21 @@ function App() {
         });
     };
 
-    // PDF Export Logic
+    // PDF Export Logic — Premium Design v3
     const handleExportPDF = () => {
         const doc = new jsPDF();
         const pw = doc.internal.pageSize.getWidth();
         const ph = doc.internal.pageSize.getHeight();
         const m = 22;
 
-        // Design Tokens
-        const BLACK: [number, number, number] = [20, 20, 20];
-        const GOLD: [number, number, number] = [245, 166, 35];
-        const DARK: [number, number, number] = [40, 40, 40];
-        const MED: [number, number, number] = [120, 120, 120];
-        const LIGHT: [number, number, number] = [200, 200, 200];
-        const BG = [248, 248, 248];
+        // ── Design Tokens ──
+        const NAVY: [number, number, number] = [15, 23, 42];
+        const INDIGO: [number, number, number] = [79, 70, 229];
+        const WHITE: [number, number, number] = [255, 255, 255];
+        const DARK: [number, number, number] = [30, 41, 59];
+        const MED: [number, number, number] = [100, 116, 139];
+        const LIGHT_TEXT: [number, number, number] = [148, 163, 184];
+        const RULE: [number, number, number] = [226, 232, 240];
 
         // Filter data
         const fd = data.map(y => ({
@@ -305,7 +308,6 @@ function App() {
         const deg = getClassOfDegree(ov.cgpa, scale);
         const cRGB = getGradeColorRGB(ov.cgpa, scale);
 
-        // Incremental filename
         let fileNum = 1;
         try {
             const saved = localStorage.getItem('pdf_export_count');
@@ -313,214 +315,246 @@ function App() {
             localStorage.setItem('pdf_export_count', String(fileNum));
         } catch { }
 
-        // ═══ COVER PAGE ═══
-        doc.setFillColor(255, 255, 255);
+        const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // ══════════════════════════════
+        //  COVER PAGE
+        // ══════════════════════════════
+
+        // Navy background
+        doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
         doc.rect(0, 0, pw, ph, 'F');
 
-        // Diagonal decorative lines
-        doc.setDrawColor(225, 225, 225);
+        // Left accent bar
+        doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+        doc.rect(0, 0, 5, ph, 'F');
+
+        // Top-right decorative circle
+        doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+        doc.setGState(doc.GState({ opacity: 0.12 }));
+        doc.circle(pw + 15, -15, 55, 'F');
+        doc.setGState(doc.GState({ opacity: 1 }));
+
+        // Brand label
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+        doc.text('CGPA CALCULATOR', m, 28);
+        doc.setDrawColor(INDIGO[0], INDIGO[1], INDIGO[2]);
         doc.setLineWidth(0.4);
-        doc.line(pw * 0.35, 0, pw, ph * 0.45);
-        doc.line(pw * 0.42, 0, pw, ph * 0.55);
-        doc.line(pw * 0.50, 0, pw, ph * 0.65);
-        doc.line(pw * 0.58, 0, pw, ph * 0.75);
+        doc.line(m, 31, m + 30, 31);
 
-        // Top-left branding
-        doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
-        doc.rect(m, 22, 4, 12, 'F');
-        doc.setFont("times", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-        doc.text("GPA", m + 8, 28);
-        doc.setFont("times", "italic");
-        doc.text("Calculator", m + 8, 33);
+        // Title — SCHOLAR
+        const ty = ph * 0.28;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(52);
+        doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
+        doc.text('SCHOLAR', m, ty);
 
-
-
-        // Title
-        const ty = ph * 0.32;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(48);
-        doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-        doc.text("SCHOLAR", m, ty);
-
-        // Gold highlight box behind REPORT
-        const rY = ty + 8;
-        doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
-        doc.roundedRect(m - 3, rY, 100, 20, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(48);
-        doc.text("REPORT", m, rY + 16);
+        // Title — REPORT on indigo bg
+        const rY = ty + 14;
+        doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+        doc.roundedRect(m - 4, rY - 16, 108, 22, 3, 3, 'F');
+        doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
+        doc.setFontSize(52);
+        doc.text('REPORT', m, rY);
 
         // Subtitle
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(MED[0], MED[1], MED[2]);
-        doc.text("A comprehensive overview of your academic", m, rY + 36);
-        doc.text("performance across all semesters and years.", m, rY + 42);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
+        doc.text('A comprehensive overview of your academic', m, rY + 20);
+        doc.text('performance across all semesters and years.', m, rY + 27);
 
-        // Cover footer strip
-        const fy = ph - 36;
-        doc.setFillColor(BLACK[0], BLACK[1], BLACK[2]);
-        doc.roundedRect(-2, fy, pw + 4, 38, 2, 2, 'F');
+        // Separator
+        doc.setDrawColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+        doc.setGState(doc.GState({ opacity: 0.4 }));
+        doc.setLineWidth(0.4);
+        doc.line(m, rY + 37, pw - m, rY + 37);
+        doc.setGState(doc.GState({ opacity: 1 }));
 
-        // Date centered in footer
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(LIGHT[0], LIGHT[1], LIGHT[2]);
-        const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        doc.text(dateStr, m, fy + 22);
+        // Stats cards on cover — 2x2
+        const sY = rY + 47;
+        const sw = (pw - m * 2 - 8) / 2;
 
-        // ═══ PAGE SETUP HELPER ═══
-        const setupPage = () => {
+        const coverCard = (x: number, y: number, w: number, label: string, value: string, accent: [number, number, number]) => {
+            // Card background (subtle white tint)
             doc.setFillColor(255, 255, 255);
+            doc.setGState(doc.GState({ opacity: 0.06 }));
+            doc.roundedRect(x, y, w, 24, 3, 3, 'F');
+            doc.setGState(doc.GState({ opacity: 1 }));
+            // Border
+            doc.setDrawColor(accent[0], accent[1], accent[2]);
+            doc.setGState(doc.GState({ opacity: 0.35 }));
+            doc.setLineWidth(0.3);
+            doc.roundedRect(x, y, w, 24, 3, 3, 'S');
+            doc.setGState(doc.GState({ opacity: 1 }));
+            // Left accent bar
+            doc.setFillColor(accent[0], accent[1], accent[2]);
+            doc.roundedRect(x, y + 4, 3, 16, 1.5, 1.5, 'F');
+            // Label
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
+            doc.text(label.toUpperCase(), x + 8, y + 9);
+            // Value
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
+            doc.text(value, x + 8, y + 20);
+        };
+
+        coverCard(m, sY, sw, 'Cumulative CGPA', ov.cgpa.toFixed(2), cRGB);
+        coverCard(m + sw + 8, sY, sw, 'Classification', deg, INDIGO);
+        coverCard(m, sY + 30, sw, 'Total Credits', ov.grandTotalUnits.toString(), INDIGO);
+        coverCard(m + sw + 8, sY + 30, sw, 'Grading Scale', `${scale} Point`, cRGB);
+
+        // Cover footer
+        const fY = ph - 20;
+        doc.setDrawColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+        doc.setGState(doc.GState({ opacity: 0.3 }));
+        doc.setLineWidth(0.3);
+        doc.line(m, fY, pw - m, fY);
+        doc.setGState(doc.GState({ opacity: 1 }));
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
+        doc.text('CGPA Calculator  \u00b7  Scholar Report', m, fY + 7);
+        doc.text(dateStr, pw - m - doc.getTextWidth(dateStr), fY + 7);
+
+        // ══════════════════════════════
+        //  INTERIOR PAGE HELPERS
+        // ══════════════════════════════
+
+        const setupPage = () => {
+            doc.setFillColor(WHITE[0], WHITE[1], WHITE[2]);
             doc.rect(0, 0, pw, ph, 'F');
-            doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
-            doc.rect(0, 0, pw, 2.5, 'F');
-            doc.setFillColor(BLACK[0], BLACK[1], BLACK[2]);
+            // Indigo top line
+            doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+            doc.rect(0, 0, pw, 2, 'F');
+            // Left accent
+            doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
             doc.rect(0, 0, 3, ph, 'F');
         };
 
-        const sectionHead = (title: string, y: number): number => {
-            doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
-            doc.roundedRect(m, y, 4, 9, 1, 1, 'F');
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(15);
-            doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-            doc.text(title, m + 8, y + 7);
-            doc.setDrawColor(230, 230, 230);
+        const drawRule = (y: number) => {
+            doc.setDrawColor(RULE[0], RULE[1], RULE[2]);
             doc.setLineWidth(0.3);
-            doc.line(m, y + 12, pw - m, y + 12);
-            return y + 18;
+            doc.line(m, y, pw - m, y);
         };
 
-        const statCard = (x: number, y: number, w: number, h: number, label: string, value: string, rgb: [number, number, number]) => {
-            // Card background with rounded corners
-            doc.setFillColor(BG[0], BG[1], BG[2]);
-            doc.roundedRect(x, y, w, h, 4, 4, 'F');
-            // Gradient-like lighter overlay strip at top
-            doc.setFillColor(252, 252, 252);
-            doc.roundedRect(x, y, w, h * 0.4, 4, 4, 'F');
-            // Left accent bar with rounded ends
-            doc.setFillColor(rgb[0], rgb[1], rgb[2]);
-            doc.roundedRect(x, y + 3, 3, h - 6, 1.5, 1.5, 'F');
-            // Subtle border
-            doc.setDrawColor(235, 235, 235);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(x, y, w, h, 4, 4, 'S');
-            // Label
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(6.5);
-            doc.setTextColor(MED[0], MED[1], MED[2]);
-            doc.text(label.toUpperCase(), x + 8, y + 8);
-            // Value
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(13);
-            doc.setTextColor(DARK[0], DARK[1], DARK[2]);
-            doc.text(value, x + 8, y + 18);
-        };
-
-        // ═══ SUMMARY PAGE ═══
+        // ══════════════════════════════
+        //  PAGE 2 — Academic History only (stats already on cover)
+        // ══════════════════════════════
         doc.addPage();
         setupPage();
 
         let cy = 16;
-        cy = sectionHead("SUMMARY & STANDING", cy);
-        cy += 2;
 
-        const gap = 6;
-        const cw = (pw - m * 2 - gap) / 2;
-        const ch = 22;
-
-        statCard(m, cy, cw, ch, "Cumulative GPA", ov.cgpa.toFixed(2), cRGB);
-        statCard(m + cw + gap, cy, cw, ch, "Classification", deg, cRGB);
-        cy += ch + gap;
-        statCard(m, cy, cw, ch, "Total Credits", ov.grandTotalUnits.toString(), GOLD);
-        statCard(m + cw + gap, cy, cw, ch, "Grading Scale", `${scale} Point`, GOLD);
-        cy += ch + 14;
-
-        // ═══ ACADEMIC HISTORY ═══
-        cy = sectionHead("ACADEMIC HISTORY", cy);
-        cy += 2;
+        // Section title
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+        doc.text('ACADEMIC HISTORY', m, cy);
+        cy += 3;
+        drawRule(cy);
+        cy += 8;
 
         fd.forEach((year) => {
             if (cy > ph - 40) { doc.addPage(); setupPage(); cy = 16; }
 
-            // Year header — bold name with gold underline
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(14);
-            doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-            doc.text(year.name.toUpperCase(), m, cy + 2);
-            // Gold underline accent
-            doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
-            doc.roundedRect(m, cy + 5, 20, 1.5, 0.5, 0.5, 'F');
-            cy += 14;
+            // Year label
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text(year.name.toUpperCase(), m, cy);
+            doc.setFillColor(INDIGO[0], INDIGO[1], INDIGO[2]);
+            doc.rect(m, cy + 2, 16, 1, 'F');
+            cy += 10;
 
             year.semesters.forEach((sem) => {
                 const ss = calculateSemesterStats(sem.courses, scale);
                 const sRGB = getGradeColorRGB(ss.gpa, scale);
                 if (cy > ph - 50) { doc.addPage(); setupPage(); cy = 16; }
 
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(12);
+                // Semester name + GPA pill
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
                 doc.setTextColor(DARK[0], DARK[1], DARK[2]);
                 doc.text(sem.name, m, cy);
 
-                // GPA pill — measure width at same font size BEFORE changing
                 const semNameW = doc.getTextWidth(sem.name);
-                const pt = `GPA: ${ss.gpa.toFixed(2)}`;
-                doc.setFontSize(8);
-                const pW = doc.getTextWidth(pt) + 8;
+                const gpaLabel = `${ss.gpa.toFixed(2)}`;
+                doc.setFontSize(7);
+                const gpaW = doc.getTextWidth(gpaLabel) + 6;
                 doc.setFillColor(sRGB[0], sRGB[1], sRGB[2]);
-                doc.roundedRect(m + semNameW + 6, cy - 4, pW, 6, 3, 3, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFont("helvetica", "bold");
-                doc.text(pt, m + semNameW + 10, cy);
-                cy += 6;
+                doc.roundedRect(m + semNameW + 4, cy - 4, gpaW, 5.5, 2.5, 2.5, 'F');
+                doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
+                doc.setFont('helvetica', 'bold');
+                doc.text(gpaLabel, m + semNameW + 7, cy - 0.5);
+                cy += 5;
 
                 const tbody = sem.courses
                     .filter(c => (Number(c.unit) || 0) > 0)
                     .map((c, i) => [
-                        i + 1, c.code.toUpperCase() || '-', c.title || '-',
-                        c.unit, c.grade,
+                        (i + 1).toString(),
+                        c.code.toUpperCase() || '-',
+                        c.title || '-',
+                        c.unit.toString(),
+                        c.grade,
                         ((Number(c.unit) || 0) * getGradeValue(c.grade, scale)).toFixed(1)
                     ]);
 
                 autoTable(doc, {
                     startY: cy,
-                    head: [['#', 'CODE', 'COURSE TITLE', 'UNIT', 'GR', 'PTS']],
+                    head: [['#', 'CODE', 'TITLE', 'UNIT', 'GR', 'PTS']],
                     body: tbody,
                     theme: 'plain',
                     margin: { left: m, right: m },
-                    headStyles: { fillColor: BLACK, textColor: 255, fontStyle: 'bold', halign: 'left', fontSize: 8, cellPadding: 3 },
-                    bodyStyles: { textColor: DARK, fontSize: 8, lineColor: [235, 235, 235], lineWidth: 0.2, cellPadding: 3 },
-                    alternateRowStyles: { fillColor: [250, 250, 250] },
+                    headStyles: {
+                        fillColor: [248, 250, 252],
+                        textColor: MED,
+                        fontStyle: 'bold',
+                        halign: 'left',
+                        fontSize: 6.5,
+                        cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }
+                    },
+                    bodyStyles: {
+                        textColor: DARK,
+                        fontSize: 7.5,
+                        lineColor: RULE,
+                        lineWidth: 0.15,
+                        cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }
+                    },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
                     columnStyles: {
-                        0: { cellWidth: 8, halign: 'center', textColor: LIGHT },
+                        0: { cellWidth: 8, halign: 'center', textColor: LIGHT_TEXT },
                         1: { cellWidth: 20, fontStyle: 'bold' },
                         2: { cellWidth: 'auto' },
                         3: { cellWidth: 10, halign: 'center' },
                         4: { cellWidth: 10, halign: 'center', fontStyle: 'bold', textColor: sRGB },
                         5: { cellWidth: 12, halign: 'right' }
                     },
-                    styles: { font: "helvetica" }
+                    styles: { font: 'helvetica', fillColor: WHITE }
                 });
 
                 // @ts-ignore
-                cy = doc.lastAutoTable.finalY + 10;
+                cy = doc.lastAutoTable.finalY + 8;
             });
             cy += 4;
         });
 
-        // Page footers
+        // Page footers (interior pages only)
         const tp = doc.internal.pages.length - 1;
         for (let i = 2; i <= tp; i++) {
             doc.setPage(i);
-            doc.setFontSize(7);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(LIGHT[0], LIGHT[1], LIGHT[2]);
-            doc.text("Scholar Report", m, ph - 8);
-            doc.text(`${i - 1}  /  ${tp - 1}`, pw - m - 10, ph - 8);
+            drawRule(ph - 12);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6);
+            doc.setTextColor(LIGHT_TEXT[0], LIGHT_TEXT[1], LIGHT_TEXT[2]);
+            doc.text('CGPA Calculator  \u00b7  Scholar Report', m, ph - 7);
+            const pn = `${i - 1} / ${tp - 1}`;
+            doc.text(pn, pw - m - doc.getTextWidth(pn), ph - 7);
         }
 
         doc.save(`Scholar_Report_${fileNum}.pdf`);
@@ -667,7 +701,7 @@ function App() {
                         <div className="size-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
                             <Calculator size={16} />
                         </div>
-                        <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">GPA Calculator</h1>
+                        <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">CGPA Calculator</h1>
                     </div>
                     <div className="flex items-center gap-0.5">
                         <button
@@ -721,8 +755,8 @@ function App() {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
                 {/* Year Tabs — sticky inside scroll area so content scrolls behind it */}
-                <div className="sticky top-0 bg-white/20 dark:bg-[#1a1a24]/20 backdrop-blur-xl px-1 sm:px-6 py-2.5 z-20 transition-colors">
-                    <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <div className="sticky top-0 bg-white/20 dark:bg-[#1a1a24]/20 backdrop-blur-xl px-1 sm:px-6 pt-2.5 pb-3 z-20 transition-colors">
+                    <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar px-2 sm:px-0 py-0.5">
                         {data.map((year, index) => (
                             <button
                                 key={year.id}
