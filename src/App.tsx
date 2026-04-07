@@ -359,10 +359,11 @@ function App() {
   <style>
     @page { size: A4; margin: 0; }
     @media print {
-      body { background: none !important; }
+      body { background: none !important; padding: 0 !important; margin: 0 !important; }
       .no-print { display: none !important; }
-      .a4-page { margin: 0 !important; box-shadow: none !important; }
-      .page-break { page-break-after: always; break-after: page; }
+      .a4-page { margin: 0 !important; box-shadow: none !important; min-height: auto !important; }
+      .cover-page { height: 100vh !important; page-break-after: always; overflow: hidden; }
+      .report-page { height: auto !important; }
     }
     * { box-sizing: border-box; }
     body { font-family: 'Manrope', sans-serif; background: #e5e7eb; margin: 0; padding: 20px 0; color: #002e02; }
