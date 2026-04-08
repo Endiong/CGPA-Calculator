@@ -49,7 +49,7 @@ const GradingInfoModal: React.FC = () => {
           {/* Header - Gray shaded background, consistent with SettingsModal */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111118]">
              <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Grading System</h2>
-             <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 transition-colors sm:hidden">
+             <button onClick={() => setIsOpen(false)} aria-label="Close grading system guide" className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 transition-colors sm:hidden">
                <X size={18} />
              </button>
           </div>
@@ -57,10 +57,10 @@ const GradingInfoModal: React.FC = () => {
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-7 no-scrollbar pb-24">
              {/* Section 1: Quick Guide */}
              <section className="bg-gray-50 dark:bg-[#111118] border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                <h4 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-1.5 uppercase tracking-wide">
-                  <Sparkles size={14} className="text-gray-400" />
+                <h3 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Sparkles size={14} className="text-gray-500 dark:text-gray-400" />
                   Quick Guide
-                </h4>
+                </h3>
                 <ul className="text-[11px] text-gray-600 dark:text-gray-400 space-y-3 leading-relaxed">
                   <li className="flex items-start gap-2">
                     <div className="size-1 rounded-full bg-gray-300 dark:bg-gray-600 mt-1.5 shrink-0" />
@@ -83,18 +83,18 @@ const GradingInfoModal: React.FC = () => {
 
               {/* Grade Points Chart */}
               <section>
-                <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">Grade Points <span className="h-px bg-gray-100 dark:bg-gray-800 flex-1"></span></h3>
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">Grade Points <span className="h-px bg-gray-100 dark:bg-gray-800 flex-1"></span></h3>
                 <div className="grid grid-cols-6 gap-1.5">
                   {GRADE_OPTIONS.map((opt) => (
                     <div key={opt.letter} className="flex flex-col items-center bg-gray-50 dark:bg-[#111118] rounded-lg p-1.5 border border-gray-100 dark:border-gray-800">
                       <span className="text-base font-black mb-1 text-gray-800 dark:text-gray-200">{opt.letter}</span>
                       <div className="flex flex-col items-center gap-0.5 w-full">
-                        <span className="text-[9px] uppercase text-gray-400 font-bold">5.0</span>
+                        <span className="text-[9px] uppercase text-gray-500 dark:text-gray-500 font-bold">5.0</span>
                         <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400">{opt.value5}</span>
                       </div>
                       <div className="w-full h-px bg-gray-200 dark:bg-gray-700/50 my-1"></div>
                       <div className="flex flex-col items-center gap-0.5 w-full">
-                        <span className="text-[9px] uppercase text-gray-400 font-bold">4.0</span>
+                        <span className="text-[9px] uppercase text-gray-500 dark:text-gray-500 font-bold">4.0</span>
                         <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400">{opt.value4}</span>
                       </div>
                     </div>
@@ -109,13 +109,13 @@ const GradingInfoModal: React.FC = () => {
                   <div className="flex bg-gray-50 dark:bg-gray-800/50 p-0.5 rounded-lg border border-gray-200 dark:border-gray-700/50">
                     <button
                       onClick={() => setActiveTab('5.0')}
-                      className={`px-3 py-0.5 text-[10px] font-bold rounded-md transition-all ${activeTab === '5.0' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500'}`}
+                      className={`px-3 py-0.5 text-[10px] font-bold rounded-md transition-all ${activeTab === '5.0' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-500'}`}
                     >
                       5.0 Scale
                     </button>
                     <button
                       onClick={() => setActiveTab('4.0')}
-                      className={`px-3 py-0.5 text-[10px] font-bold rounded-md transition-all ${activeTab === '4.0' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500'}`}
+                      className={`px-3 py-0.5 text-[10px] font-bold rounded-md transition-all ${activeTab === '4.0' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-500'}`}
                     >
                       4.0 Scale
                     </button>
