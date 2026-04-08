@@ -27,6 +27,7 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           onChange={(e) => onChange(course.id, 'code', e.target.value)}
           onFocus={(e) => e.target.select()}
           placeholder="CODE"
+          aria-label={`Course code for row ${index + 1}`}
           className="w-full bg-transparent border-none p-0 text-gray-900 dark:text-gray-100 font-medium focus:ring-0 focus:outline-none uppercase placeholder-gray-300 dark:placeholder-gray-600 text-sm"
         />
       </td>
@@ -37,6 +38,7 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           onChange={(e) => onChange(course.id, 'title', e.target.value)}
           onFocus={(e) => e.target.select()}
           placeholder="Course Title"
+          aria-label={`Course title for row ${index + 1}`}
           className="w-full bg-transparent border-none p-0 text-gray-600 dark:text-gray-400 focus:ring-0 focus:outline-none placeholder-gray-300 dark:placeholder-gray-600 text-sm"
         />
       </td>
@@ -47,6 +49,7 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           value={course.unit}
           onFocus={(e) => e.target.select()}
           onChange={(e) => onChange(course.id, 'unit', parseInt(e.target.value) || 0)}
+          aria-label={`Course units for row ${index + 1}`}
           className="w-full bg-gray-50 dark:bg-[#0f0f1a] border border-transparent focus:border-gray-400 dark:focus:border-gray-500 focus:bg-white dark:focus:bg-gray-700 rounded text-center p-1 text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none font-medium text-sm transition-colors"
         />
       </td>
@@ -55,6 +58,7 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           <select
             value={course.grade}
             onChange={(e) => onChange(course.id, 'grade', e.target.value as GradeLetter)}
+            aria-label={`Course grade for row ${index + 1}`}
             className="w-full appearance-none py-1.5 pl-2.5 pr-6 rounded font-medium focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 text-xs cursor-pointer border transition-colors focus:outline-none bg-gray-50 border-gray-200 text-gray-700 dark:bg-[#0f0f1a] dark:border-gray-600 dark:text-gray-300"
           >
             {GRADE_OPTIONS.map((opt) => (

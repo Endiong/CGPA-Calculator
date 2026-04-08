@@ -739,8 +739,8 @@ function App() {
                             <button
                                 onClick={() => toggleYearExclusion(activeYear.id)}
                                 className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${activeYear.isExcluded
-                                    ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40'
-                                    : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                                    ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                                    : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
                                     }`}
                             >
                                 {activeYear.isExcluded ? 'Include' : 'Exclude'}

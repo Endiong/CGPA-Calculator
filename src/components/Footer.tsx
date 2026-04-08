@@ -26,7 +26,7 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
                                 onClick={() => onScaleChange('4.0')}
                                 className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${scale === '4.0'
                                     ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
-                                    : 'text-gray-400 dark:text-gray-500'
+                                    : 'text-gray-500 dark:text-gray-500'
                                     }`}
                             >
                                 4.0 Scale
@@ -35,7 +35,7 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
                                 onClick={() => onScaleChange('5.0')}
                                 className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${scale === '5.0'
                                     ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
-                                    : 'text-gray-400 dark:text-gray-500'
+                                    : 'text-gray-500 dark:text-gray-500'
                                     }`}
                             >
                                 5.0 Scale
@@ -73,7 +73,7 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
                                 title="Use 4.0 Grading Scale"
                                 className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${scale === '4.0'
                                     ? 'bg-white dark:bg-gray-100 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
-                                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-transparent'
+                                    : 'text-gray-500 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-transparent'
                                     }`}
                             >
                                 4.0
@@ -83,7 +83,7 @@ const Footer: React.FC<FooterProps> = ({ scale, onScaleChange, totalUnits, total
                                 title="Use 5.0 Grading Scale"
                                 className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${scale === '5.0'
                                     ? 'bg-white dark:bg-gray-100 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
-                                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-transparent'
+                                    : 'text-gray-500 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-transparent'
                                     }`}
                             >
                                 5.0

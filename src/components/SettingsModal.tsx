@@ -232,10 +232,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             <select
                                 value={gradingConfig.presetName}
                                 onChange={(e) => {
+                                    if (e.target.value === 'Custom') return;
                                     const preset = GRADING_PRESETS.find(p => p.presetName === e.target.value);
                                     if (preset) applyPreset(preset);
                                 }}
-                                className="w-full appearance-none bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-gray-400/50 transition-colors"
+                                aria-label="Select grading system preset"
+                                className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg py-2 pl-3 pr-8 text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:border-transparent transition-all"
                             >
                                 {GRADING_PRESETS.map(p => (
                                     <option key={p.presetName} value={p.presetName}>{p.presetName}</option>
@@ -279,6 +281,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     type="number" min={0} max={100}
                                                     value={gradingConfig.scoreRanges[letter].min}
                                                     onChange={(e) => updateScoreRange(letter, 'min', e.target.value)}
+                                                    aria-label={`Minimum score for grade ${letter}`}
                                                     className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
                                                 />
                                             </div>
@@ -287,6 +290,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     type="number" min={0} max={100}
                                                     value={gradingConfig.scoreRanges[letter].max}
                                                     onChange={(e) => updateScoreRange(letter, 'max', e.target.value)}
+                                                    aria-label={`Maximum score for grade ${letter}`}
                                                     className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
                                                 />
                                             </div>
@@ -312,6 +316,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     value={gradingConfig.gradePoints[letter].value5}
                                                     onChange={(e) => updateGradePoint(letter, 'value5', e.target.value)}
                                                     disabled={scale !== '5.0'}
+                                                    aria-label={`5.0 scale points for grade ${letter}`}
                                                     className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '5.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'}`}
                                                 />
                                             </div>
@@ -321,6 +326,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     value={gradingConfig.gradePoints[letter].value4}
                                                     onChange={(e) => updateGradePoint(letter, 'value4', e.target.value)}
                                                     disabled={scale !== '4.0'}
+                                                    aria-label={`4.0 scale points for grade ${letter}`}
                                                     className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '4.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'}`}
                                                 />
                                             </div>

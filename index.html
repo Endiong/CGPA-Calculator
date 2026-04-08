@@ -28,83 +28,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="CGPA Calculator" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            primary: "#6b7280",
-            "primary-dark": "#4b5563",
-            "primary-light": "#f3f4f6",
-          },
-          backgroundColor: {
-            'dark-base': '#0a0a0f',
-            'dark-surface': '#111118',
-            'dark-card': '#1a1a24',
-          }
-        },
-      },
-    }
-  </script>
-  <style>
-    * {
-      font-family: 'Inter', system-ui, sans-serif;
-    }
-
-    ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #d1d5db;
-      border-radius: 99px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #9ca3af;
-    }
-
-    .dark ::-webkit-scrollbar-thumb {
-      background: #4b5563;
-    }
-
-    .dark ::-webkit-scrollbar-thumb:hover {
-      background: #6b7280;
-    }
-
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      appearance: none;
-      margin: 0;
-    }
-
-    input[type=number] {
-      -moz-appearance: textfield;
-      appearance: textfield;
-    }
-  </style>
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <!-- Theme: apply immediately to prevent flash of wrong theme -->
   <script>
     (function() {
