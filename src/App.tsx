@@ -43,14 +43,6 @@ function App() {
     });
 
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState<'table' | 'card'>(() => {
-        return (localStorage.getItem('view_mode') as 'table' | 'card') || 'table';
-    });
-
-    const handleViewModeChange = (mode: 'table' | 'card') => {
-        setViewMode(mode);
-        localStorage.setItem('view_mode', mode);
-    };
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Grading config
@@ -64,8 +56,8 @@ function App() {
     const [showGradient, setShowGradient] = useState<boolean>(() => {
         try {
             const saved = localStorage.getItem('show_gradient');
-            return saved !== null ? saved === 'true' : true; // default ON
-        } catch { return true; }
+            return saved !== null ? saved === 'true' : false; // default OFF
+        } catch { return false; }
     });
 
     const [gradientColors, setGradientColors] = useState<string[]>(() => {
@@ -543,7 +535,6 @@ function App() {
                                 key={semester.id}
                                 semester={semester}
                                 scale={scale}
-                                viewMode={viewMode}
                                 onAddCourse={addCourse}
                                 onUpdateCourse={updateCourse}
                                 onDeleteCourse={deleteCourse}
@@ -594,15 +585,12 @@ function App() {
                 onClose={() => setIsAIModalOpen(false)}
                 onImport={handleAIImport}
                 semesters={activeYear.semesters}
-                viewMode={viewMode}
                 gradingConfig={gradingConfig}
             />
 
             <SettingsModal
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                viewMode={viewMode}
-                onViewModeChange={handleViewModeChange}
                 showGradient={showGradient}
                 onShowGradientChange={handleShowGradientChange}
                 gradientColors={gradientColors}

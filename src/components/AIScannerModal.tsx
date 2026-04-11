@@ -10,7 +10,7 @@ interface AIScannerModalProps {
   onClose: () => void;
   onImport: (courses: Course[], semesterId: string) => void;
   semesters: Semester[];
-  viewMode: 'table' | 'card';
+  viewMode?: never;
   gradingConfig: GradingConfig;
 }
 
@@ -67,7 +67,7 @@ const GradeSelect: React.FC<{
 );
 
 // ── Main Component ──
-const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImport, semesters, viewMode, gradingConfig }) => {
+const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImport, semesters, gradingConfig }) => {
   // State
   const [step, setStep] = useState<'upload' | 'scanning' | 'review'>('upload');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -482,71 +482,42 @@ const AIScannerModal: React.FC<AIScannerModalProps> = ({ isOpen, onClose, onImpo
 
               {/* Editable Course List */}
               <div className="mb-4 max-h-[45vh] overflow-y-auto pr-1">
-                {viewMode === 'table' ? (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700">
-                        <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-left py-2 w-6">S/N</th>
-                        <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-left py-2">Code</th>
-                        <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-left py-2">Title</th>
-                        <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-center py-2 w-14">Unit</th>
-                        <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-center py-2 w-16">Grade</th>
-                        <th className="py-2 w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {extractedCourses.map((c, i) => (
-                        <tr key={c.id} className="border-b border-gray-100 dark:border-gray-700/50 group hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
-                          <td className="py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500">{i + 1}</td>
-                          <td className="py-2 pr-2">
-                            <input type="text" value={c.code} onChange={(e) => updateCourse(c.id, 'code', e.target.value)} onFocus={(e) => e.target.select()} className="w-full text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent border-none outline-none uppercase placeholder:text-gray-300 dark:placeholder:text-gray-600 placeholder:normal-case" placeholder="CODE" />
-                          </td>
-                          <td className="py-2 pr-2">
-                            <input type="text" value={c.title} onChange={(e) => updateCourse(c.id, 'title', e.target.value)} onFocus={(e) => e.target.select()} className="w-full text-xs text-gray-600 dark:text-gray-400 bg-transparent border-none outline-none placeholder:text-gray-300 dark:placeholder:text-gray-600" placeholder="Course title" />
-                          </td>
-                          <td className="py-2 w-14">
-                            <input type="number" min="0" value={c.unit || ''} onChange={(e) => updateCourse(c.id, 'unit', parseInt(e.target.value) || 0)} onFocus={(e) => e.target.select()} className="w-12 text-xs text-center font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded py-1 outline-none focus:ring-1 focus:ring-gray-400/30" />
-                          </td>
-                          <td className="py-2 w-16">
-                            <GradeSelect value={c.grade} onChange={(v) => updateCourse(c.id, 'grade', v)} className="w-14 text-xs text-center rounded py-1" />
-                          </td>
-                          <td className="py-2">
-                            <button onClick={() => removeCourse(c.id)} className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                              <Trash2 size={12} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="space-y-2">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-left py-2 w-6">S/N</th>
+                      <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-left py-2">Code</th>
+                      <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-left py-2">Title</th>
+                      <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-center py-2 w-14">Unit</th>
+                      <th className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase text-center py-2 w-16">Grade</th>
+                      <th className="py-2 w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {extractedCourses.map((c, i) => (
-                      <div key={c.id} className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 border border-gray-100 dark:border-gray-700 transition-colors group">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 w-5 shrink-0">{i + 1}</span>
-                            <input type="text" value={c.code} onChange={(e) => updateCourse(c.id, 'code', e.target.value)} onFocus={(e) => e.target.select()} className="text-sm font-bold text-gray-900 dark:text-gray-100 bg-transparent border-none outline-none w-full uppercase placeholder:text-gray-300 dark:placeholder:text-gray-600 placeholder:normal-case" placeholder="Course code" />
-                          </div>
-                          <button onClick={() => removeCourse(c.id)} className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100">
-                            <Trash2 size={14} />
+                      <tr key={c.id} className="border-b border-gray-100 dark:border-gray-700/50 group hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
+                        <td className="py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500">{i + 1}</td>
+                        <td className="py-2 pr-2">
+                          <input type="text" value={c.code} onChange={(e) => updateCourse(c.id, 'code', e.target.value)} onFocus={(e) => e.target.select()} className="w-full text-xs font-bold text-gray-900 dark:text-gray-100 bg-transparent border-none outline-none uppercase placeholder:text-gray-300 dark:placeholder:text-gray-600 placeholder:normal-case" placeholder="CODE" />
+                        </td>
+                        <td className="py-2 pr-2">
+                          <input type="text" value={c.title} onChange={(e) => updateCourse(c.id, 'title', e.target.value)} onFocus={(e) => e.target.select()} className="w-full text-xs text-gray-600 dark:text-gray-400 bg-transparent border-none outline-none placeholder:text-gray-300 dark:placeholder:text-gray-600" placeholder="Course title" />
+                        </td>
+                        <td className="py-2 w-14">
+                          <input type="number" min="0" value={c.unit || ''} onChange={(e) => updateCourse(c.id, 'unit', parseInt(e.target.value) || 0)} onFocus={(e) => e.target.select()} className="w-12 text-xs text-center font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded py-1 outline-none focus:ring-1 focus:ring-gray-400/30" />
+                        </td>
+                        <td className="py-2 w-16">
+                          <GradeSelect value={c.grade} onChange={(v) => updateCourse(c.id, 'grade', v)} className="w-14 text-xs text-center rounded py-1" />
+                        </td>
+                        <td className="py-2">
+                          <button onClick={() => removeCourse(c.id)} className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                            <Trash2 size={12} />
                           </button>
-                        </div>
-                        <input type="text" value={c.title} onChange={(e) => updateCourse(c.id, 'title', e.target.value)} onFocus={(e) => e.target.select()} className="text-xs text-gray-500 dark:text-gray-400 bg-transparent border-none outline-none w-full mb-2 placeholder:text-gray-300 dark:placeholder:text-gray-600" placeholder="Course title (optional)" />
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Units</span>
-                            <input type="number" min="0" value={c.unit || ''} onChange={(e) => updateCourse(c.id, 'unit', parseInt(e.target.value) || 0)} onFocus={(e) => e.target.select()} className="w-12 text-sm text-center font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/30 transition-colors" />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Grade</span>
-                            <GradeSelect value={c.grade} onChange={(v) => updateCourse(c.id, 'grade', v)} className="text-sm rounded-md py-1 px-2" />
-                          </div>
-                        </div>
-                      </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                )}
+                  </tbody>
+                </table>
 
                 {extractedCourses.length === 0 && (
                   <div className="py-8 text-center text-gray-400 dark:text-gray-500 text-sm">

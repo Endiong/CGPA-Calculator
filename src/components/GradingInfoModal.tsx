@@ -39,7 +39,7 @@ const GradingInfoModal: React.FC = () => {
   const tips = [
     { icon: BookOpen, text: 'Scroll down within a semester to hit **Add Course** and log your results.' },
     { icon: Cpu,      text: 'Tap the **Scan** icon in the header to let AI read your result sheet automatically.' },
-    { icon: Settings, text: 'Use **Settings** to switch scale (5.0 / 4.0) or adjust score ranges for your school.' },
+    { icon: Settings, text: 'Use **Settings** to switch scale (5.0 / 4.0), adjust score ranges, or enable a **cool animated gradient** background.' },
     { icon: FileDown, text: 'Tap the **PDF** icon to export a beautifully formatted Scholar Report.' },
   ];
 

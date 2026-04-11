@@ -3,7 +3,6 @@ import { Plus, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Semester, GradingScale, Course } from '../types';
 import { calculateSemesterStats, getGradeColor } from '../utils';
 import CourseRow from './CourseRow';
-import CourseCard from './CourseCard';
 
 interface SemesterSectionProps {
   semester: Semester;
@@ -12,7 +11,6 @@ interface SemesterSectionProps {
   onAddCourse: (semesterId: string) => void;
   onDeleteCourse: (semesterId: string, courseId: string) => void;
   onDeleteSemester: (semesterId: string) => void;
-  viewMode: 'table' | 'card';
 }
 
 const SemesterSection: React.FC<SemesterSectionProps> = ({
@@ -22,7 +20,6 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
   onAddCourse,
   onDeleteCourse,
   onDeleteSemester,
-  viewMode,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const stats = calculateSemesterStats(semester.courses, scale);
@@ -76,46 +73,22 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
       {/* Content */}
       {!isCollapsed && (
         <div>
-          {viewMode === 'table' ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[500px] md:min-w-full">
-                <thead>
-                  <tr className="bg-gray-50/60 dark:bg-gray-800/50 border-b border-gray-100/80 dark:border-gray-700 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">
-                    <th className="px-3 md:px-4 py-2 w-10">S/N</th>
-                    <th className="px-3 md:px-4 py-2 w-24 min-w-[80px]">Code</th>
-                    <th className="px-3 md:px-4 py-2 min-w-[140px]">Title</th>
-                    <th className="px-3 md:px-4 py-2 w-16 text-center">Units</th>
-                    <th className="px-3 md:px-4 py-2 w-20">Grade</th>
-                    <th className="px-3 md:px-4 py-2 w-16 text-right">Pts</th>
-                    <th className="px-3 md:px-4 py-2 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {semester.courses.map((course, index) => (
-                    <CourseRow
-                      key={course.id}
-                      index={index}
-                      course={course}
-                      scale={scale}
-                      onChange={(id, field, value) => onUpdateCourse(semester.id, id, field, value)}
-                      onDelete={(id) => onDeleteCourse(semester.id, id)}
-                    />
-                  ))}
-                  {semester.courses.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
-                        No courses yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[500px] md:min-w-full">
+              <thead>
+                <tr className="bg-gray-50/60 dark:bg-gray-800/50 border-b border-gray-100/80 dark:border-gray-700 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">
+                  <th className="px-3 md:px-4 py-2 w-10">S/N</th>
+                  <th className="px-3 md:px-4 py-2 w-24 min-w-[80px]">Code</th>
+                  <th className="px-3 md:px-4 py-2 min-w-[140px]">Title</th>
+                  <th className="px-3 md:px-4 py-2 w-16 text-center">Units</th>
+                  <th className="px-3 md:px-4 py-2 w-20">Grade</th>
+                  <th className="px-3 md:px-4 py-2 w-16 text-right">Pts</th>
+                  <th className="px-3 md:px-4 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
                 {semester.courses.map((course, index) => (
-                  <CourseCard
+                  <CourseRow
                     key={course.id}
                     index={index}
                     course={course}
@@ -124,14 +97,16 @@ const SemesterSection: React.FC<SemesterSectionProps> = ({
                     onDelete={(id) => onDeleteCourse(semester.id, id)}
                   />
                 ))}
-              </div>
-              {semester.courses.length === 0 && (
-                <div className="py-8 text-center text-gray-400 dark:text-gray-500 text-sm border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-xl">
-                  No courses yet
-                </div>
-              )}
-            </div>
-          )}
+                {semester.courses.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
+                      No courses yet
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Add Course */}
           <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-700/50">

@@ -8,8 +8,6 @@ const GRADE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    viewMode: 'table' | 'card';
-    onViewModeChange: (mode: 'table' | 'card') => void;
     showGradient: boolean;
     onShowGradientChange: (show: boolean) => void;
     gradientColors: string[];
@@ -20,7 +18,6 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
     isOpen, onClose,
-    viewMode, onViewModeChange,
     showGradient, onShowGradientChange,
     gradientColors, onGradientColorsChange,
     gradingConfig, onGradingConfigChange,
@@ -267,19 +264,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 px-3">
                                 Used by AI scanner to convert numerical scores to grades
                             </p>
-                        </div>
-                    </section>
-
-                    {/* ── View Layout ── */}
-                    <section>
-                        <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">View Layout</h3>
-                        <div className="p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex">
-                            <button onClick={() => onViewModeChange('table')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                                Table
-                            </button>
-                            <button onClick={() => onViewModeChange('card')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'card' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                                Cards
-                            </button>
                         </div>
                     </section>
 
