@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Info, X, BookOpen, Cpu, FileDown, Settings } from 'lucide-react';
 import { GRADE_OPTIONS } from '../constants';
 
@@ -6,17 +6,8 @@ const GradingInfoModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'5.0' | '4.0'>('5.0');
 
-  useEffect(() => {
-    const hasSeen = localStorage.getItem('hasSeenHelpWidget');
-    if (!hasSeen) {
-      setTimeout(() => setIsOpen(true), 1500);
-    }
-  }, []);
-
-  const toggleWidget = () => {
-    if (!isOpen) localStorage.setItem('hasSeenHelpWidget', 'true');
-    setIsOpen(!isOpen);
-  };
+  // No auto-popup — users open this manually via the side button
+  const toggleWidget = () => setIsOpen(prev => !prev);
 
   const DEGREE_CLASSES = {
     '5.0': [
@@ -53,24 +44,24 @@ const GradingInfoModal: React.FC = () => {
         />
       )}
 
-      {/* Floating trigger button */}
+      {/* Side FAB — left edge, vertically centred so it never overlaps the footer */}
       <button
         onClick={toggleWidget}
         title="Grading Guide & Help"
         aria-label="Open grading guide"
-        className={`fixed bottom-[100px] right-4 z-50 flex items-center justify-center size-10 rounded-full shadow-lg transition-all duration-300 border
-          ${isOpen
-            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white scale-95'
-            : 'bg-white dark:bg-[#1a1a24] text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-200'
-          }`}
+        className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-7 h-16 rounded-r-xl shadow-lg transition-all duration-300 border-y border-r ${
+          isOpen
+            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white'
+            : 'bg-white dark:bg-[#1a1a24] text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 hover:text-gray-600 dark:hover:text-gray-300'
+        }`}
       >
-        {isOpen ? <X size={16} /> : <Info size={16} />}
+        {isOpen ? <X size={13} /> : <Info size={13} />}
       </button>
 
-      {/* Panel */}
+      {/* Panel — opens to the right of the FAB on desktop, from left on mobile */}
       <div
-        className={`fixed bottom-[150px] right-4 z-50 w-[calc(100vw-2rem)] sm:w-[340px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
-          ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        className={`fixed left-8 top-1/2 -translate-y-1/2 z-50 w-[calc(100vw-4rem)] sm:w-[340px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+          ${isOpen ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 -translate-x-4 pointer-events-none'}`}
       >
         <div className="bg-white dark:bg-[#1a1a24] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl shadow-black/10 dark:shadow-black/40 overflow-hidden max-h-[70vh] flex flex-col">
 

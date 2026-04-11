@@ -209,11 +209,34 @@ ${buildSemesterCards()}
 </body>
 </html>`;
 
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (!win) {
-        alert('Could not open print window. Please allow popups for this site.');
+    // Write into a hidden iframe so we don't need a popup window.
+    // This avoids popup blockers and works on mobile browsers.
+    const iframeId = 'cgpa_pdf_frame';
+    let iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = iframeId;
+        iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;';
+        document.body.appendChild(iframe);
+    }
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+        alert('Could not prepare print view. Please try again.');
         return;
     }
-    win.document.write(html);
-    win.document.close();
+
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    // Wait for fonts/images to load then auto-print
+    iframe.onload = () => {
+        setTimeout(() => {
+            iframe!.contentWindow?.focus();
+            iframe!.contentWindow?.print();
+            // Remove iframe after print dialog is dismissed
+            setTimeout(() => iframe?.remove(), 1000);
+        }, 600);
+    };
 };

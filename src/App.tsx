@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Plus, FileDown, Trash2, X, Info, ScanLine, Settings, Github } from 'lucide-react';
+import { Calculator, Plus, FileDown, Trash2, X, ScanLine, Settings, Github } from 'lucide-react';
 import { Year, GradingScale, Course, GradingConfig } from './types';
 import { getInitialData, getGradingConfig } from './constants';
-import { calculateOverallStats, calculateSemesterStats, generateId, getClassOfDegree, createEmptyCourses } from './utils';
+import { calculateOverallStats, generateId, getClassOfDegree, createEmptyCourses } from './utils';
 import SemesterSection from './components/SemesterSection';
 import Footer from './components/Footer';
 import GradingInfoModal from './components/GradingInfoModal';
@@ -10,6 +10,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 import AIScannerModal from './components/AIScannerModal';
 import SettingsModal from './components/SettingsModal';
 import Grainient from './components/Grainient';
+import MedicalApp from './components/MedicalApp';
 import { handleExportPDF } from './utils/exportPDF';
 
 const ORDINALS = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
@@ -75,6 +76,16 @@ function App() {
     const handleGradientColorsChange = (colors: string[]) => {
         setGradientColors(colors);
         localStorage.setItem('gradient_colors', JSON.stringify(colors));
+    };
+
+    // App mode — BSc/HND or Medicine
+    const [mode, setMode] = useState<'bsc' | 'medicine'>(() => {
+        return (localStorage.getItem('app_mode') as 'bsc' | 'medicine') || 'bsc';
+    });
+
+    const handleModeChange = (newMode: 'bsc' | 'medicine') => {
+        setMode(newMode);
+        localStorage.setItem('app_mode', newMode);
     };
 
     // Dark mode initialization — new users always start in light mode
@@ -415,36 +426,74 @@ function App() {
                 />
             )}
             {/* Header */}
-            <header className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-3 z-30 transition-colors relative">
-                <div className="max-w-[960px] mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+            <header className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-3 z-30 transition-colors">
+                <div className="max-w-[960px] mx-auto flex items-center gap-2">
+
+                    {/* Left — Logo */}
+                    <div className="flex items-center gap-2 flex-none">
                         <div className="size-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
                             <Calculator size={16} />
                         </div>
-                        <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100">CGPA Calculator</h1>
+                        <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 hidden sm:block">CGPA Calculator</h1>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                        <button
-                            onClick={handleClearAllData}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            title="Clear All Data"
-                        >
-                            <Trash2 size={15} />
-                        </button>
-                        <button
-                            onClick={() => setIsAIModalOpen(true)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            title="Scan Document"
-                        >
-                            <ScanLine size={15} />
-                        </button>
-                        <button
-                            onClick={executeExportPDF}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            title="Export to PDF"
-                        >
-                            <FileDown size={15} />
-                        </button>
+
+                    {/* Centre — Mode Toggle */}
+                    <div className="flex-1 flex justify-center">
+                        <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                            <button
+                                onClick={() => handleModeChange('bsc')}
+                                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                                    mode === 'bsc'
+                                        ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                }`}
+                            >
+                                <span className="sm:hidden">BSc</span>
+                                <span className="hidden sm:inline">BSc / HND</span>
+                            </button>
+                            <button
+                                onClick={() => handleModeChange('medicine')}
+                                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                                    mode === 'medicine'
+                                        ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
+                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                }`}
+                            >
+                                <span className="sm:hidden">Med</span>
+                                <span className="hidden sm:inline">Medicine</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right — Actions */}
+                    <div className="flex items-center gap-0.5 flex-none">
+                        {mode === 'bsc' && (
+                            <button
+                                onClick={handleClearAllData}
+                                className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                title="Clear All Data"
+                            >
+                                <Trash2 size={15} />
+                            </button>
+                        )}
+                        {mode === 'bsc' && (
+                            <button
+                                onClick={() => setIsAIModalOpen(true)}
+                                className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                title="Scan Document"
+                            >
+                                <ScanLine size={15} />
+                            </button>
+                        )}
+                        {mode === 'bsc' && (
+                            <button
+                                onClick={executeExportPDF}
+                                className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                title="Export to PDF"
+                            >
+                                <FileDown size={15} />
+                            </button>
+                        )}
                         <a
                             href="https://github.com/Endiong/CGPA-Calculator"
                             target="_blank"
@@ -462,112 +511,121 @@ function App() {
                             <Settings size={15} />
                         </button>
                     </div>
+
                 </div>
             </header>
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
-                {/* Year Tabs — sticky inside scroll area so content scrolls behind it */}
-                <div className="sticky top-0 bg-white/20 dark:bg-[#1a1a24]/20 backdrop-blur-xl px-1 sm:px-6 pt-2.5 pb-3 z-20 transition-colors">
-                    <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar px-2 sm:px-0 py-0.5">
-                        {data.map((year, index) => (
-                            <button
-                                key={year.id}
-                                onClick={() => setActiveYearId(year.id)}
-                                className={`group relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${activeYearId === year.id
-                                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-sm'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                    }`}
-                            >
-                                {year.name}
-                                {data.length > 1 && index !== 0 && (
-                                    <span
-                                        onClick={(e) => deleteYear(e as any, year.id)}
-                                        className={`ml-0.5 rounded-full transition-colors ${activeYearId === year.id
-                                            ? 'text-gray-400 hover:text-white'
-                                            : 'text-gray-400 dark:text-gray-500 hover:text-red-500'
-                                            }`}
+                {mode === 'medicine' ? (
+                    <MedicalApp />
+                ) : (
+                    <>
+                        {/* Year Tabs — sticky inside scroll area so content scrolls behind it */}
+                        <div className="sticky top-0 bg-white/20 dark:bg-[#1a1a24]/20 backdrop-blur-xl px-1 sm:px-6 pt-2.5 pb-3 z-20 transition-colors">
+                            <div className="max-w-[960px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar px-2 sm:px-0 py-0.5">
+                                {data.map((year, index) => (
+                                    <button
+                                        key={year.id}
+                                        onClick={() => setActiveYearId(year.id)}
+                                        className={`group relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${activeYearId === year.id
+                                            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-sm'
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                        }`}
                                     >
-                                        <X size={12} />
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                        <button
-                            onClick={addYear}
-                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/60 dark:bg-[#1a1a24]/60 backdrop-blur-sm shadow-sm whitespace-nowrap transition-all"
-                        >
-                            <Plus size={12} />
-                            Add Year
-                        </button>
-                    </div>
-                </div>
-
-                <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-36 pt-4">
-
-                    {/* Exclude/Include toggle */}
-                    {activeYear && (
-                        <div className={`mb-4 mt-3 px-3 py-2 rounded-lg flex items-center justify-between text-xs ${activeYear.isExcluded
-                            ? 'bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/40'
-                            : 'bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200/80 dark:border-emerald-800/40'
-                            }`}>
-                            <span className={`font-medium ${activeYear.isExcluded ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                                {activeYear.isExcluded
-                                    ? 'This year is excluded — not counted in CGPA or PDF'
-                                    : 'This year is included in your CGPA calculation'}
-                            </span>
-                            <button
-                                onClick={() => toggleYearExclusion(activeYear.id)}
-                                className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${activeYear.isExcluded
-                                    ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40'
-                                    : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-                                    }`}
-                            >
-                                {activeYear.isExcluded ? 'Include' : 'Exclude'}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Semesters */}
-                    <div className="flex flex-col gap-6 relative z-10">
-                        {activeYear && activeYear.semesters.map((semester) => (
-                            <SemesterSection
-                                key={semester.id}
-                                semester={semester}
-                                scale={scale}
-                                onAddCourse={addCourse}
-                                onUpdateCourse={updateCourse}
-                                onDeleteCourse={deleteCourse}
-                                onDeleteSemester={deleteSemester}
-                            />
-                        ))}
-
-                        {activeYear && (
-                            <div className="flex justify-center pt-4 pb-6 relative z-10">
+                                        {year.name}
+                                        {data.length > 1 && index !== 0 && (
+                                            <span
+                                                onClick={(e) => deleteYear(e as any, year.id)}
+                                                className={`ml-0.5 rounded-full transition-colors ${activeYearId === year.id
+                                                    ? 'text-gray-400 hover:text-white'
+                                                    : 'text-gray-400 dark:text-gray-500 hover:text-red-500'
+                                                }`}
+                                            >
+                                                <X size={12} />
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
                                 <button
-                                    onClick={() => addSemester(activeYear.id)}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/60 dark:bg-[#1a1a24]/60 backdrop-blur-lg shadow-sm hover:shadow-md transition-all"
+                                    onClick={addYear}
+                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/60 dark:bg-[#1a1a24]/60 backdrop-blur-sm shadow-sm whitespace-nowrap transition-all"
                                 >
-                                    <Plus size={14} />
-                                    Add Semester
+                                    <Plus size={12} />
+                                    Add Year
                                 </button>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
+
+                        <div className="max-w-[960px] mx-auto px-4 sm:px-6 pb-36 pt-4">
+
+                            {/* Exclude/Include toggle */}
+                            {activeYear && (
+                                <div className={`mb-4 mt-3 px-3 py-2 rounded-lg flex items-center justify-between text-xs ${activeYear.isExcluded
+                                    ? 'bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/40'
+                                    : 'bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200/80 dark:border-emerald-800/40'
+                                }`}>
+                                    <span className={`font-medium ${activeYear.isExcluded ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                                        {activeYear.isExcluded
+                                            ? 'This year is excluded — not counted in CGPA or PDF'
+                                            : 'This year is included in your CGPA calculation'}
+                                    </span>
+                                    <button
+                                        onClick={() => toggleYearExclusion(activeYear.id)}
+                                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${activeYear.isExcluded
+                                            ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                                            : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                                        }`}
+                                    >
+                                        {activeYear.isExcluded ? 'Include' : 'Exclude'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Semesters */}
+                            <div className="flex flex-col gap-6 relative z-10">
+                                {activeYear && activeYear.semesters.map((semester) => (
+                                    <SemesterSection
+                                        key={semester.id}
+                                        semester={semester}
+                                        scale={scale}
+                                        onAddCourse={addCourse}
+                                        onUpdateCourse={updateCourse}
+                                        onDeleteCourse={deleteCourse}
+                                        onDeleteSemester={deleteSemester}
+                                    />
+                                ))}
+
+                                {activeYear && (
+                                    <div className="flex justify-center pt-4 pb-6 relative z-10">
+                                        <button
+                                            onClick={() => addSemester(activeYear.id)}
+                                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white/60 dark:bg-[#1a1a24]/60 backdrop-blur-lg shadow-sm hover:shadow-md transition-all"
+                                        >
+                                            <Plus size={14} />
+                                            Add Semester
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
             </main>
 
-            {/* Footer */}
-            <Footer
-                scale={scale}
-                onScaleChange={setScale}
-                totalUnits={overallStats.grandTotalUnits}
-                totalPoints={overallStats.grandTotalPoints}
-                cgpa={overallStats.cgpa}
-            />
+            {/* BSc Footer — hidden in medicine mode (MedicalApp renders its own) */}
+            {mode === 'bsc' && (
+                <Footer
+                    scale={scale}
+                    onScaleChange={setScale}
+                    totalUnits={overallStats.grandTotalUnits}
+                    totalPoints={overallStats.grandTotalPoints}
+                    cgpa={overallStats.cgpa}
+                />
+            )}
 
-            {/* Modals & Widgets */}
-            <GradingInfoModal />
+            {/* Modals — BSc-only */}
+            {mode === 'bsc' && <GradingInfoModal />}
 
             <ConfirmationModal
                 isOpen={confirmationState.isOpen}
@@ -580,13 +638,15 @@ function App() {
                 preferenceKey={confirmationState.preferenceKey}
             />
 
-            <AIScannerModal
-                isOpen={isAIModalOpen}
-                onClose={() => setIsAIModalOpen(false)}
-                onImport={handleAIImport}
-                semesters={activeYear.semesters}
-                gradingConfig={gradingConfig}
-            />
+            {mode === 'bsc' && (
+                <AIScannerModal
+                    isOpen={isAIModalOpen}
+                    onClose={() => setIsAIModalOpen(false)}
+                    onImport={handleAIImport}
+                    semesters={activeYear.semesters}
+                    gradingConfig={gradingConfig}
+                />
+            )}
 
             <SettingsModal
                 isOpen={isSettingsOpen}

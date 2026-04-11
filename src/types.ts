@@ -55,3 +55,19 @@ export interface GradingConfig {
   /** Score ranges for numerical-to-letter conversion */
   scoreRanges: ScoreRangeMap;
 }
+
+// ─── Medical Student Mode ────────────────────────────────────────────────────
+
+export interface MedSubject {
+  id: string;
+  name: string;
+  ca: number | '';    // Continuous Assessment — out of 30
+  exam: number | '';  // Professional Exam — out of 70
+}
+
+export interface MedYear {
+  id: string;
+  name: string;       // e.g. "Pre-Clinical Year 1"
+  examName: string;   // e.g. "1st MBBS"
+  subjects: MedSubject[];
+}

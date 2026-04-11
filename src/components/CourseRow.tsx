@@ -72,8 +72,11 @@ const CourseRow: React.FC<CourseRowProps> = ({ index, course, scale, onChange, o
           </div>
         </div>
       </td>
-      <td className="px-3 md:px-4 py-2.5 text-right font-bold text-gray-900 dark:text-gray-100 text-sm">
-        {points.toFixed(1)}
+      <td className="px-3 md:px-4 py-2.5 text-right font-bold text-sm">
+        {Number(course.unit) > 0
+          ? <span className="text-gray-900 dark:text-gray-100">{points.toFixed(1)}</span>
+          : <span className="text-gray-300 dark:text-gray-600">—</span>
+        }
       </td>
       <td className="px-3 md:px-4 py-2.5 text-center">
         <button
