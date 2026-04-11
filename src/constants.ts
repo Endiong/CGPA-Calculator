@@ -48,7 +48,7 @@ const GRADE_LETTERS: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 /** NUC/JAMB standard used by most Nigerian federal & state universities */
 export const NUC_STANDARD_CONFIG: GradingConfig = {
-  presetName: 'NUC Standard (Nigerian)',
+  presetName: 'Federal / State University',
   gradePoints: {
     A: { value5: 5.0, value4: 4.0 },
     B: { value5: 4.0, value4: 3.0 },
@@ -67,9 +67,9 @@ export const NUC_STANDARD_CONFIG: GradingConfig = {
   },
 };
 
-/** Covenant University / private university style — higher bar for A */
+/** Private university style — higher bar for A */
 export const COVENANT_STYLE_CONFIG: GradingConfig = {
-  presetName: 'Covenant / Private University',
+  presetName: 'Private University',
   gradePoints: {
     A: { value5: 5.0, value4: 4.0 },
     B: { value5: 4.0, value4: 3.0 },

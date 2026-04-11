@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, RefreshCw, ChevronDown } from 'lucide-react';
-import { GradingConfig, GradeLetter, GradingScale } from '../types';
+import { GradingConfig } from '../types';
 import { GRADING_PRESETS, DEFAULT_GRADING_CONFIG } from '../constants';
 
-const GRADE_LETTERS: GradeLetter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
+const GRADE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -16,7 +16,6 @@ interface SettingsModalProps {
     onGradientColorsChange: (colors: string[]) => void;
     gradingConfig: GradingConfig;
     onGradingConfigChange: (config: GradingConfig) => void;
-    scale: GradingScale;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -25,14 +24,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     showGradient, onShowGradientChange,
     gradientColors, onGradientColorsChange,
     gradingConfig, onGradingConfigChange,
-    scale,
 }) => {
     const [isDark, setIsDark] = useState(() => {
         try { return document.documentElement.classList.contains('dark'); } catch { return false; }
     });
 
     const [suppressedCount, setSuppressedCount] = useState(0);
-    const [gradingTab, setGradingTab] = useState<'points' | 'scores'>('scores');
 
     useEffect(() => { countSuppressed(); }, [isOpen]);
 
@@ -100,20 +97,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         onGradingConfigChange({ ...preset });
     };
 
-    const updateGradePoint = (letter: GradeLetter, scaleKey: 'value5' | 'value4', raw: string) => {
-        const val = parseFloat(raw);
-        if (isNaN(val)) return;
-        onGradingConfigChange({
-            ...gradingConfig,
-            gradePoints: {
-                ...gradingConfig.gradePoints,
-                [letter]: { ...gradingConfig.gradePoints[letter], [scaleKey]: val },
-            },
-            presetName: 'Custom',
-        });
-    };
 
-    const updateScoreRange = (letter: GradeLetter, bound: 'min' | 'max', raw: string) => {
+    const updateScoreRange = (letter: typeof GRADE_LETTERS[number], bound: 'min' | 'max', raw: string) => {
         const val = parseInt(raw);
         if (isNaN(val)) return;
         onGradingConfigChange({
@@ -129,8 +114,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const resetGrading = () => onGradingConfigChange({ ...DEFAULT_GRADING_CONFIG });
 
     if (!isOpen) return null;
-
-    const scaleKey = scale === '5.0' ? 'value5' : 'value4';
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -228,7 +211,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
 
                         {/* Preset Picker */}
-                        <div className="relative mb-3">
+                        <div className="relative mb-2">
                             <select
                                 value={gradingConfig.presetName}
                                 onChange={(e) => {
@@ -243,100 +226,47 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                                     <option key={p.presetName} value={p.presetName}>{p.presetName}</option>
                                 ))}
                                 {gradingConfig.presetName === 'Custom' && (
-                                    <option value="Custom">Custom</option>
+                                    <option value="Custom">Custom (Edited)</option>
                                 )}
                             </select>
                             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         </div>
-
-                        {/* Tab switcher */}
-                        <div className="p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex mb-3">
-                            <button
-                                onClick={() => setGradingTab('scores')}
-                                className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${gradingTab === 'scores' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                            >
-                                Score Ranges
-                            </button>
-                            <button
-                                onClick={() => setGradingTab('points')}
-                                className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${gradingTab === 'points' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
-                            >
-                                Grade Points
-                            </button>
-                        </div>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-3 leading-relaxed">
+                            Not matching your school? Edit the score ranges below to fit your grading system.
+                        </p>
 
                         <div className="rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                            {gradingTab === 'scores' ? (
-                                <>
-                                    <div className="grid grid-cols-[2rem_1fr_1fr] bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-700 px-3 py-1.5">
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Grade</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">Min Score</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">Max Score</span>
+                            <div className="grid grid-cols-[2rem_1fr_1fr] bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-700 px-3 py-1.5">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Grade</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">Min Score</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">Max Score</span>
+                            </div>
+                            {GRADE_LETTERS.map((letter) => (
+                                <div key={letter} className="grid grid-cols-[2rem_1fr_1fr] items-center px-3 py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                                    <span className="text-sm font-black text-gray-700 dark:text-gray-300">{letter}</span>
+                                    <div className="flex justify-center">
+                                        <input
+                                            type="number" min={0} max={100}
+                                            value={gradingConfig.scoreRanges[letter].min}
+                                            onChange={(e) => updateScoreRange(letter, 'min', e.target.value)}
+                                            aria-label={`Minimum score for grade ${letter}`}
+                                            className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
+                                        />
                                     </div>
-                                    {GRADE_LETTERS.map((letter) => (
-                                        <div key={letter} className="grid grid-cols-[2rem_1fr_1fr] items-center px-3 py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
-                                            <span className="text-sm font-black text-gray-700 dark:text-gray-300">{letter}</span>
-                                            <div className="flex justify-center">
-                                                <input
-                                                    type="number" min={0} max={100}
-                                                    value={gradingConfig.scoreRanges[letter].min}
-                                                    onChange={(e) => updateScoreRange(letter, 'min', e.target.value)}
-                                                    aria-label={`Minimum score for grade ${letter}`}
-                                                    className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
-                                                />
-                                            </div>
-                                            <div className="flex justify-center">
-                                                <input
-                                                    type="number" min={0} max={100}
-                                                    value={gradingConfig.scoreRanges[letter].max}
-                                                    onChange={(e) => updateScoreRange(letter, 'max', e.target.value)}
-                                                    aria-label={`Maximum score for grade ${letter}`}
-                                                    className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 px-3">
-                                        Used when AI scanner detects numerical scores
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="grid grid-cols-[2rem_1fr_1fr] bg-gray-50 dark:bg-gray-800/60 border-b border-gray-100 dark:border-gray-700 px-3 py-1.5">
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Grade</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">5.0 Pts</span>
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide text-center">4.0 Pts</span>
+                                    <div className="flex justify-center">
+                                        <input
+                                            type="number" min={0} max={100}
+                                            value={gradingConfig.scoreRanges[letter].max}
+                                            onChange={(e) => updateScoreRange(letter, 'max', e.target.value)}
+                                            aria-label={`Maximum score for grade ${letter}`}
+                                            className="w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40"
+                                        />
                                     </div>
-                                    {GRADE_LETTERS.map((letter) => (
-                                        <div key={letter} className="grid grid-cols-[2rem_1fr_1fr] items-center px-3 py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
-                                            <span className={`text-sm font-black ${scale === '5.0' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>{letter}</span>
-                                            <div className="flex justify-center">
-                                                <input
-                                                    type="number" min={0} max={5} step={0.5}
-                                                    value={gradingConfig.gradePoints[letter].value5}
-                                                    onChange={(e) => updateGradePoint(letter, 'value5', e.target.value)}
-                                                    disabled={scale !== '5.0'}
-                                                    aria-label={`5.0 scale points for grade ${letter}`}
-                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '5.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'}`}
-                                                />
-                                            </div>
-                                            <div className="flex justify-center">
-                                                <input
-                                                    type="number" min={0} max={4} step={0.5}
-                                                    value={gradingConfig.gradePoints[letter].value4}
-                                                    onChange={(e) => updateGradePoint(letter, 'value4', e.target.value)}
-                                                    disabled={scale !== '4.0'}
-                                                    aria-label={`4.0 scale points for grade ${letter}`}
-                                                    className={`w-14 text-center text-xs font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border rounded-md py-1 outline-none focus:ring-1 focus:ring-gray-400/40 transition-opacity ${scale === '4.0' ? 'border-gray-300 dark:border-gray-500' : 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'}`}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 px-3">
-                                        Active scale ({scale}) column is highlighted
-                                    </p>
-                                </>
-                            )}
+                                </div>
+                            ))}
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 px-3">
+                                Used by AI scanner to convert numerical scores to grades
+                            </p>
                         </div>
                     </section>
 

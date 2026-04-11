@@ -609,7 +609,6 @@ function App() {
                 onGradientColorsChange={handleGradientColorsChange}
                 gradingConfig={gradingConfig}
                 onGradingConfigChange={handleGradingConfigChange}
-                scale={scale}
             />
         </div>
     );
