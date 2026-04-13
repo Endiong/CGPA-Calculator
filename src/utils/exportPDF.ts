@@ -1,12 +1,32 @@
 import { calculateOverallStats, calculateSemesterStats, getClassOfDegree } from '../utils';
 import { Year, GradingScale, GradingConfig, Course } from '../types';
 
-export const handleExportPDF = (data: Year[], scale: GradingScale, gradingConfig: GradingConfig) => {
+// ─── Build course rows ────────────────────────────────────────────────────────
+
+const buildRows = (courses: Course[]): string =>
+    courses
+        .filter(c => (Number(c.unit) || 0) > 0)
+        .map((c, i) => `
+            <tr>
+                <td class="td-sn">${String(i + 1).padStart(2, '0')}</td>
+                <td class="td-code">${c.code || '—'}</td>
+                <td>${c.title || '—'}</td>
+                <td class="td-unit">${c.unit}</td>
+                <td class="td-grade">${c.grade}</td>
+            </tr>`)
+        .join('');
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+export const handleExportPDF = (
+    data: Year[],
+    scale: GradingScale,
+    gradingConfig: GradingConfig,
+    _onStart?: () => void,
+    _onDone?: () => void,
+) => {
     const fd = data
-        .map(y => ({
-            ...y,
-            semesters: y.semesters.filter(s => s.courses.some(c => (Number(c.unit) || 0) > 0))
-        }))
+        .map(y => ({ ...y, semesters: y.semesters.filter(s => s.courses.some(c => (Number(c.unit) || 0) > 0)) }))
         .filter(y => y.semesters.length > 0 && !y.isExcluded);
 
     if (fd.length === 0) {
@@ -14,229 +34,244 @@ export const handleExportPDF = (data: Year[], scale: GradingScale, gradingConfig
         return;
     }
 
-    const ov = calculateOverallStats(data, scale, gradingConfig);
+    const ov  = calculateOverallStats(data, scale, gradingConfig);
     const deg = getClassOfDegree(ov.cgpa, scale);
-    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    
-    let exportCount = parseInt(localStorage.getItem('cgpa_pdf_count') || '0', 10);
-    exportCount += 1;
+
+    let exportCount = parseInt(localStorage.getItem('cgpa_pdf_count') || '0', 10) + 1;
     localStorage.setItem('cgpa_pdf_count', exportCount.toString());
-    const filename = exportCount > 1 ? `CGPA_Report_${exportCount}` : `CGPA_Report`;
+    const filename = exportCount > 1 ? `CGPA_Report_${exportCount}` : 'CGPA_Report';
 
-    const buildTableRows = (courses: Course[]): string =>
-        courses
-            .filter(c => (Number(c.unit) || 0) > 0)
-            .map((c, i) => `
-              <tr>
-                <td style="padding: 6px 8px; color: #717973; font-family: 'Roboto Mono', monospace; font-size: 10px;">${String(i + 1).padStart(2, '0')}</td>
-                <td style="padding: 6px 8px; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 10px;">${c.code || '—'}</td>
-                <td style="padding: 6px 8px; font-size: 10px;">${c.title || '—'}</td>
-                <td style="padding: 6px 8px; text-align: center; font-family: 'Roboto Mono', monospace; font-size: 10px;">${c.unit}</td>
-                <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: #426920; font-size: 10px; font-family: 'Epilogue', sans-serif;">${c.grade}</td>
-              </tr>`)
-            .join('');
-
-    const buildSemesterCards = (): string =>
-        fd.map(year => {
-            const semesterHtml = year.semesters.map(sem => {
-                const ss = calculateSemesterStats(sem.courses, scale, gradingConfig);
-                return `
-                  <div style="position: relative; background: white; border-radius: 0 8px 8px 0; border: 1px solid rgba(0,46,2,0.05); border-left: none; margin-bottom: 12px; break-inside: avoid;">
-                    <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: #426920; border-radius: 6px 0 0 6px;"></div>
-                    <div style="padding: 12px 12px 12px 20px;">
-                      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-                        <h4 style="font-family: 'Epilogue', sans-serif; font-weight: 900; color: #002e02; text-transform: uppercase; letter-spacing: -0.025em; font-size: 14px; margin: 0;">${sem.name}</h4>
-                        <div style="text-align: right;">
-                          <span style="font-size: 7px; color: #717973; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.2em; display: block; line-height: 1;">Semester GPA</span>
-                          <span style="font-size: 18px; font-weight: 900; color: #002e02; font-family: 'Epilogue', sans-serif;">${ss.gpa.toFixed(2)}</span>
-                        </div>
-                      </div>
-                      <table style="width: 100%; text-align: left; border-collapse: collapse;">
-                        <thead>
-                          <tr style="border-bottom: 1px solid rgba(0,46,2,0.3);">
-                            <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase; width: 32px;">SN</th>
-                            <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase;">Code</th>
-                            <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase;">Title</th>
-                            <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase; text-align: center;">Units</th>
-                            <th style="padding: 4px 8px; font-size: 8px; font-weight: 900; color: #002e02; font-family: 'Roboto Mono', monospace; text-transform: uppercase; text-align: right;">Grade</th>
-                          </tr>
-                        </thead>
-                        <tbody style="border-collapse: collapse;">
-                          ${buildTableRows(sem.courses)}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>`;
-            }).join('');
-
+    // ── Semester blocks HTML ──────────────────────────────────────────────────
+    const semesterBlocksHtml = fd.map(year => {
+        const semsHtml = year.semesters.map(sem => {
+            const ss = calculateSemesterStats(sem.courses, scale, gradingConfig);
             return `
-              <div style="margin-bottom: 24px; page-break-inside: avoid;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                  <h3 style="font-family: 'Epilogue', sans-serif; font-size: 16px; font-weight: 900; color: #002e02; text-transform: uppercase; letter-spacing: 0; margin: 0;">${year.name}</h3>
-                  <div style="height: 1px; flex: 1; background: rgba(0,46,2,0.1);"></div>
-                </div>
-                ${semesterHtml}
-              </div>
-            `;
+                <div class="sem-card">
+                    <div class="sem-accent"></div>
+                    <div class="sem-inner">
+                        <div class="sem-head">
+                            <h4 class="sem-name">${sem.name}</h4>
+                            <div style="text-align:right">
+                                <span class="sem-gpa-label">Semester GPA</span>
+                                <span class="sem-gpa-value">${ss.gpa.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <table class="courses">
+                            <thead>
+                                <tr>
+                                    <th style="width:32px">SN</th>
+                                    <th>Code</th><th>Title</th>
+                                    <th style="text-align:center">Units</th>
+                                    <th style="text-align:right">Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>${buildRows(sem.courses)}</tbody>
+                        </table>
+                    </div>
+                </div>`;
         }).join('');
 
+        return `
+            <div class="year-block">
+                <div class="year-header">
+                    <h3 class="year-name">${year.name}</h3>
+                    <div class="year-hr"></div>
+                </div>
+                ${semsHtml}
+            </div>`;
+    }).join('');
+
+    // ── Full HTML document ────────────────────────────────────────────────────
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8"/>
 <title>${filename}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;700;900&family=Manrope:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
-@page { size: A4; margin: 15mm; }
-@media print {
-  body { background: none !important; padding: 0 !important; margin: 0 !important; }
-  .no-print { display: none !important; }
-  .a4-page { margin: 0 !important; box-shadow: none !important; background: white !important; }
-  .cover-page { page-break-after: always; overflow: hidden; background: #F9FAF7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; height: 260mm !important; }
-  .report-page { height: auto !important; padding: 0 !important; }
-  .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; display: block; }
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;900&family=Manrope:wght@400;600;700&family=Roboto+Mono:wght@700&display=swap');
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;padding:0;background:#94a3b8;font-family:'Manrope',system-ui,sans-serif;color:#111827}
+@page{size:A4;margin:0}
+@media print{body{background:white}.page-break{page-break-after:always}}
+
+/* ── Cover ── */
+.cover{
+  background:#F9FAF7;width:210mm;min-height:297mm;position:relative;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+  padding:140px 80px;overflow:hidden;
 }
-* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-body { font-family: 'Manrope', sans-serif; background: #e5e7eb; margin: 0; padding: 20px 0; color: #111827; }
-.a4-page { width: 210mm; min-height: 297mm; margin: 10px auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.12); position: relative; overflow: hidden; }
-.cover-page { background: #F9FAF7; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40mm 30mm; position: relative; z-index: 10; height: 260mm; }
-.fixed-footer { position: absolute; bottom: 12mm; left: 0; width: 100%; text-align: center; }
-.report-page { padding: 10px; display: flex; flex-direction: column; }
-.no-print-bar { text-align: center; margin-bottom: 16px; font-family: Manrope, sans-serif; font-size: 13px; color: #717973; padding: 8px; }
-.print-btn { background: #111827; color: white; border: none; padding: 12px 24px; border-radius: 9999px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 16px; }
-.geo-line { position: absolute; background: rgba(46,125,50,0.15); }
-.geo-node { position: absolute; width: 6px; height: 6px; background: #2E7D32; border-radius: 50%; }
-.data-line { position: absolute; width: 1px; background: linear-gradient(to bottom, transparent, rgba(46,125,50,0.35), transparent); }
-tbody tr:not(:last-child) td { border-bottom: 1px solid rgba(17,24,39,0.08); }
+.geo-line{position:absolute;background:rgba(46,125,50,.15)}
+.geo-node{position:absolute;width:6px;height:6px;background:#2E7D32;border-radius:50%}
+.data-line{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(46,125,50,.35),transparent)}
+.cover-title{font-family:'Epilogue',system-ui,sans-serif;font-size:72px;font-weight:900;color:#2E7D32;line-height:.9;letter-spacing:-.05em;text-transform:uppercase;margin:0}
+.cover-sub{font-weight:700;color:#2E7D32;letter-spacing:.5em;font-size:11px;text-transform:uppercase}
+.badge{width:64px;height:64px;border:1px solid rgba(46,125,50,.3);display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+.badge-inner{width:24px;height:24px;border:2px solid rgba(46,125,50,.5);display:flex;align-items:center;justify-content:center}
+.badge-core{width:8px;height:8px;background:rgba(46,125,50,.8)}
+.divider{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:32px}
+.div-line{height:1px;width:64px;background:rgba(46,125,50,.3)}
+
+/* ── Report ── */
+.report{
+  background:white;width:210mm;min-height:297mm;padding:36px 40px;
+  display:flex;flex-direction:column;
+}
+.rpt-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;border-bottom:2.5px solid #111827;padding-bottom:8px}
+.rpt-title{font-family:'Epilogue',system-ui,sans-serif;font-size:26px;font-weight:900;color:#111827;text-transform:uppercase;letter-spacing:-.025em;margin:0}
+
+/* Summary card */
+.summary{
+  background:#f9fafb;border-radius:14px;
+  border:1px solid rgba(17,24,39,.08);
+  display:flex;align-items:stretch;gap:0;
+  margin-bottom:24px;overflow:hidden;
+}
+.sum-cgpa{
+  background:#2E7D32;color:white;
+  padding:18px 24px;min-width:200px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.sum-cgpa::after{content:'';position:absolute;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07);right:-20px;top:-20px}
+.sum-cgpa-label{font-size:8px;text-transform:uppercase;letter-spacing:.2em;opacity:.85;margin:0 0 4px;font-family:'Roboto Mono',monospace}
+.sum-cgpa-val{font-size:44px;font-weight:900;font-family:'Epilogue',system-ui,sans-serif;line-height:1;letter-spacing:-.03em}
+.sum-cgpa-class{display:inline-block;margin-top:6px;padding:2px 10px;background:rgba(0,0,0,.18);border-radius:9999px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.sum-stats{display:flex;flex:1;align-items:center;justify-content:space-around;padding:16px 24px;gap:0}
+.stat{text-align:center}
+.stat-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.18em;color:#6b7280;margin:0 0 4px;font-family:'Roboto Mono',monospace}
+.stat-val{font-size:28px;font-weight:900;font-family:'Epilogue',system-ui,sans-serif;color:#111827;letter-spacing:-.02em}
+.stat-sub{font-size:9px;color:#9ca3af;margin:2px 0 0;font-family:'Roboto Mono',monospace}
+.stat-div{width:1px;height:32px;background:rgba(17,24,39,.12);align-self:center}
+
+/* Section title */
+.sec-title{font-size:9px;font-weight:700;color:#111827;text-transform:uppercase;letter-spacing:.2em;margin:0 0 14px;display:flex;align-items:center;gap:12px}
+.sec-line{height:1px;flex:1;background:rgba(17,24,39,.1)}
+
+/* Year + Sem */
+.year-block{margin-bottom:22px}
+.year-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.year-name{font-family:'Epilogue',system-ui,sans-serif;font-size:15px;font-weight:900;color:#002e02;text-transform:uppercase;letter-spacing:-.01em;margin:0}
+.year-hr{height:1px;flex:1;background:rgba(0,46,2,.1)}
+.sem-card{position:relative;background:white;border-radius:0 8px 8px 0;border:1px solid rgba(0,46,2,.07);border-left:none;margin-bottom:10px}
+.sem-accent{position:absolute;left:0;top:0;bottom:0;width:5px;background:#426920;border-radius:5px 0 0 5px}
+.sem-inner{padding:10px 12px 10px 18px}
+.sem-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:7px}
+.sem-name{font-family:'Epilogue',system-ui,sans-serif;font-weight:900;color:#002e02;text-transform:uppercase;letter-spacing:-.025em;font-size:13px;margin:0}
+.sem-gpa-label{font-size:7px;color:#717973;font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.15em;display:block}
+.sem-gpa-value{font-size:18px;font-weight:900;color:#002e02;font-family:'Epilogue',system-ui,sans-serif}
+table.courses{width:100%;text-align:left;border-collapse:collapse}
+table.courses thead tr{border-bottom:1px solid rgba(0,46,2,.25)}
+table.courses th{padding:3px 8px;font-size:7.5px;font-weight:900;color:#002e02;font-family:'Roboto Mono',monospace;text-transform:uppercase}
+table.courses td{padding:5px 8px;font-size:10px}
+table.courses tbody tr:not(:last-child) td{border-bottom:1px solid rgba(17,24,39,.07)}
+.td-sn{color:#9ca3af;font-family:'Roboto Mono',monospace}
+.td-code{font-family:'Roboto Mono',monospace;font-weight:700}
+.td-unit{text-align:center;font-family:'Roboto Mono',monospace}
+.td-grade{text-align:right;font-weight:700;color:#426920}
+
+/* Footer */
+.rpt-footer{margin-top:auto;text-align:center;padding-top:14px;border-top:1px solid rgba(17,24,39,.08)}
+.rpt-footer-txt{font-size:7px;font-family:'Roboto Mono',monospace;font-weight:700;color:rgba(17,24,39,.35);text-transform:uppercase;letter-spacing:.3em;margin:0}
 </style>
 </head>
 <body>
 
-<div class="no-print">
-<div class="no-print-bar">Your Scholar Report is ready. Click <strong>Save as PDF</strong> to download.</div>
-<button class="print-btn" onclick="window.print()">
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-Save as PDF
-</button>
-</div>
-
-<!-- COVER PAGE -->
-<div class="a4-page cover-page page-break">
-<!-- Grid lines -->
-<div class="geo-line" style="width: 100%; height: 1px; top: 25%; left: 0;"></div>
-<div class="geo-line" style="width: 100%; height: 1px; bottom: 25%; left: 0;"></div>
-<div class="geo-line" style="height: 100%; width: 1px; left: 33.33%; top: 0;"></div>
-<div class="geo-line" style="height: 100%; width: 1px; right: 33.33%; top: 0;"></div>
-<div class="geo-node" style="top: 25%; left: 33.33%; transform: translate(-50%, -50%);"></div>
-<div class="geo-node" style="top: 25%; right: 33.33%; transform: translate(50%, -50%);"></div>
-<div class="geo-node" style="bottom: 25%; left: 33.33%; transform: translate(-50%, 50%);"></div>
-<div class="geo-node" style="bottom: 25%; right: 33.33%; transform: translate(50%, 50%);"></div>
-<div class="data-line" style="height: 16rem; left: 20%; top: 0;"></div>
-<div class="data-line" style="height: 12rem; right: 25%; bottom: 0;"></div>
-<!-- Wireframe shapes -->
-<div style="position: absolute; width: 200px; height: 200px; top: 10%; left: 8%; border: 2px solid rgba(46,125,50,0.15); transform: rotateX(45deg) rotateZ(45deg);"></div>
-<div style="position: absolute; width: 160px; height: 160px; bottom: 12%; right: 8%; clip-path: polygon(50% 0%,0% 100%,100% 100%); background: linear-gradient(to top, rgba(46,125,50,0.15), transparent);"></div>
-
-<!-- Content -->
-<div style="position: relative; z-index: 10;">
-<div style="margin-bottom: 24px; display: flex; justify-content: center;">
-  <div style="width: 64px; height: 64px; border: 1px solid rgba(46,125,50,0.3); display: flex; align-items: center; justify-content: center; position: relative;">
-    <div style="width: 24px; height: 24px; border: 2px solid rgba(46,125,50,0.5); display: flex; align-items: center; justify-content: center;">
-      <div style="width: 8px; height: 8px; background: rgba(46,125,50,0.8);"></div>
+<!-- Cover Page -->
+<div class="cover page-break">
+  <div class="geo-line" style="width:100%;height:1px;top:25%;left:0"></div>
+  <div class="geo-line" style="width:100%;height:1px;bottom:25%;left:0"></div>
+  <div class="geo-line" style="height:100%;width:1px;left:33.33%;top:0"></div>
+  <div class="geo-line" style="height:100%;width:1px;right:33.33%;top:0"></div>
+  <div class="geo-node" style="top:25%;left:33.33%;transform:translate(-50%,-50%)"></div>
+  <div class="geo-node" style="top:25%;right:33.33%;transform:translate(50%,-50%)"></div>
+  <div class="geo-node" style="bottom:25%;left:33.33%;transform:translate(-50%,50%)"></div>
+  <div class="geo-node" style="bottom:25%;right:33.33%;transform:translate(50%,50%)"></div>
+  <div class="data-line" style="height:16rem;left:20%;top:0"></div>
+  <div class="data-line" style="height:12rem;right:25%;bottom:0"></div>
+  <div style="position:absolute;width:200px;height:200px;top:10%;left:8%;border:2px solid rgba(46,125,50,.12);transform:rotateX(45deg) rotateZ(45deg)"></div>
+  <div style="position:absolute;width:160px;height:160px;bottom:12%;right:8%;clip-path:polygon(50% 0%,0% 100%,100% 100%);background:linear-gradient(to top,rgba(46,125,50,.12),transparent)"></div>
+  <div style="position:relative;z-index:10">
+    <div class="badge">
+      <div class="badge-inner"><div class="badge-core"></div></div>
+    </div>
+    <h1 class="cover-title">SCHOLAR<br/>REPORT</h1>
+    <div class="divider">
+      <div class="div-line"></div>
+      <span class="cover-sub">CGPA CALCULATOR</span>
+      <div class="div-line"></div>
     </div>
   </div>
 </div>
-<h1 style="font-family: 'Epilogue', sans-serif; font-size: 72px; font-weight: 900; color: #2E7D32; line-height: 0.9; letter-spacing: -0.05em; text-transform: uppercase; margin: 0;">SCHOLAR<br/>REPORT</h1>
 
-<div style="margin-top: 32px; display: flex; align-items: center; justify-content: center; gap: 16px;">
-  <div style="height: 1px; width: 64px; background: rgba(46,125,50,0.3);"></div>
-  <span style="font-family: 'Roboto Mono', monospace; font-weight: 700; color: #2E7D32; letter-spacing: 0.5em; font-size: 11px; text-transform: uppercase;">CGPA CALCULATOR</span>
-  <div style="height: 1px; width: 64px; background: rgba(46,125,50,0.3);"></div>
-</div>
-</div>
-</div>
-
-<!-- REPORT PAGE -->
-<div class="a4-page report-page">
-<header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 2px solid #111827; padding-bottom: 8px;">
-<div>
-  <h2 style="font-family: 'Epilogue', sans-serif; font-size: 24px; font-weight: 900; color: #111827; text-transform: uppercase; letter-spacing: -0.025em; margin: 0;">Academic Report</h2>
-</div>
-</header>
-
-<!-- Summary Card -->
-<section style="margin-bottom: 24px;">
-<div style="background: #f9fafb; border-radius: 16px; padding: 8px; border: 1px solid rgba(17,24,39,0.1); display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-  <div style="background: #2E7D32; color: white; padding: 12px; border-radius: 12px; position: relative; overflow: hidden; width: 220px; text-align: center; flex-shrink: 0;">
-    <div style="position: absolute; right: -16px; top: -16px; width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.1);"></div>
-    <p style="font-size: 8px; font-family: 'Manrope', sans-serif; text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.9; margin: 0 0 2px;">Cumulative CGPA</p>
-    <div style="font-size: 36px; font-weight: 900; font-family: 'Epilogue', sans-serif; line-height: 1;">${ov.cgpa.toFixed(2)}</div>
-    <div style="margin-top: 4px; display: inline-block; padding: 2px 8px; background: rgba(0,0,0,0.2); border-radius: 9999px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${deg}</div>
+<!-- Report Page -->
+<div class="report">
+  <div class="rpt-header">
+    <h2 class="rpt-title">Academic Report</h2>
+    <span style="font-size:8px;font-family:'Roboto Mono',monospace;color:#9ca3af;letter-spacing:.15em;text-transform:uppercase">${filename}</span>
   </div>
-  <div style="display: flex; flex: 1; justify-content: space-around; align-items: center; padding: 0 16px;">
-    <div style="text-align: center;">
-      <p style="font-size: 8px; color: #717973; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 2px; font-family: 'Roboto Mono', monospace;">Total Credits</p>
-      <div style="font-size: 22px; font-weight: 900; color: #111827; font-family: 'Epilogue', sans-serif;">${ov.grandTotalUnits}</div>
+
+  <!-- Summary Card -->
+  <div class="summary">
+    <div class="sum-cgpa">
+      <p class="sum-cgpa-label">Cumulative CGPA</p>
+      <div class="sum-cgpa-val">${ov.cgpa.toFixed(2)}</div>
+      <div class="sum-cgpa-class">${deg}</div>
     </div>
-    <div style="width: 1px; height: 24px; background: rgba(17,24,39,0.2);"></div>
-    <div style="text-align: center;">
-      <p style="font-size: 8px; color: #717973; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 2px; font-family: 'Roboto Mono', monospace;">Grading Scale</p>
-      <div style="font-size: 22px; font-weight: 900; color: #111827; font-family: 'Epilogue', sans-serif;">${scale} Point</div>
+    <div class="sum-stats">
+      <div class="stat">
+        <p class="stat-lbl">Total Credits</p>
+        <div class="stat-val">${ov.grandTotalUnits}</div>
+        <p class="stat-sub">Credit Units</p>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <p class="stat-lbl">Grading Scale</p>
+        <div class="stat-val">${scale}.0</div>
+        <p class="stat-sub">Point Scale</p>
+      </div>
     </div>
   </div>
-</div>
-</section>
 
-<!-- Semester Breakdown -->
-<section style="flex: 1;">
-<h3 style="font-size: 9px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: 0.2em; margin: 0 0 12px; font-family: 'Manrope', sans-serif; display: flex; align-items: center; gap: 12px;">
-  Performance Breakdown <span style="height: 1px; flex: 1; background: rgba(17,24,39,0.1); display: inline-block;"></span>
-</h3>
-${buildSemesterCards()}
-</section>
+  <h3 class="sec-title">Performance Breakdown <span class="sec-line"></span></h3>
 
-<!-- Footer is handled via fixed-footer class globally now -->
+  ${semesterBlocksHtml}
 
+  <div class="rpt-footer">
+    <p class="rpt-footer-txt">CGPA CALCULATOR &mdash; ACADEMIC REPORT</p>
+  </div>
 </div>
 
-<div class="fixed-footer">
-<p style="font-size: 7px; font-family: 'Roboto Mono', monospace; font-weight: 700; color: rgba(17,24,39,0.4); text-transform: uppercase; letter-spacing: 0.3em; margin: 0;">CGPA CALCULATOR &mdash; ACADEMIC REPORT</p>
-</div>
-
+<script>
+  window.onload = function() {
+    setTimeout(function() { window.print(); }, 600);
+  };
+</script>
 </body>
 </html>`;
 
-    // Write into a hidden iframe so we don't need a popup window.
-    // This avoids popup blockers and works on mobile browsers.
+    // ── Inject into hidden iframe → auto-print, no popup needed ──────────────
     const iframeId = 'cgpa_pdf_frame';
     let iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = iframeId;
-        iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;';
-        document.body.appendChild(iframe);
-    }
+    if (iframe) iframe.remove();
 
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) {
-        alert('Could not prepare print view. Please try again.');
-        return;
-    }
+    iframe = document.createElement('iframe');
+    iframe.id = iframeId;
+    iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;background:white;';
+    document.body.appendChild(iframe);
 
-    iframeDoc.open();
-    iframeDoc.write(html);
-    iframeDoc.close();
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) { alert('Could not prepare the report. Please try again.'); return; }
 
-    // Wait for fonts/images to load then auto-print
-    iframe.onload = () => {
-        setTimeout(() => {
-            iframe!.contentWindow?.focus();
-            iframe!.contentWindow?.print();
-            // Remove iframe after print dialog is dismissed
-            setTimeout(() => iframe?.remove(), 1000);
-        }, 600);
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    // The page script inside the iframe fires window.print() after fonts load.
+    // Remove the iframe once the print dialog has been dismissed.
+    const cleanup = () => {
+        setTimeout(() => iframe?.remove(), 800);
     };
+    iframe.contentWindow?.addEventListener('afterprint', cleanup);
+    // Fallback cleanup in case afterprint doesn't fire (some mobile browsers)
+    setTimeout(cleanup, 30000);
 };

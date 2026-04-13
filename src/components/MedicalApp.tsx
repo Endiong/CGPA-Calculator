@@ -4,6 +4,7 @@ import { MedYear, MedSubject } from '../types';
 import { generateId } from '../utils';
 import ConfirmationModal from './ConfirmationModal';
 import MedFooter from './MedFooter';
+import MedScannerModal from './MedScannerModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,12 @@ const getInitialMedData = (): MedYear[] => [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const MedicalApp: React.FC = () => {
+interface MedicalAppProps {
+    scannerOpen?: boolean;
+    onScannerClose?: () => void;
+}
+
+const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerClose }) => {
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -133,6 +139,12 @@ const MedicalApp: React.FC = () => {
     const [confirm, setConfirm] = useState<ConfirmConfig>({
         isOpen: false, title: '', message: '', onConfirm: () => {},
     });
+
+    // Scanner open/close is controlled by the parent (App.tsx header button)
+    // but we also need a local fallback
+    const [localScannerOpen, setLocalScannerOpen] = useState(false);
+    const isScannerOpen = scannerOpen || localScannerOpen;
+    const closeScannerAll = () => { onScannerClose?.(); setLocalScannerOpen(false); };
 
     // ── Persistence ───────────────────────────────────────────────────────────
 
@@ -219,6 +231,14 @@ const MedicalApp: React.FC = () => {
                 y.id !== yearId ? y : { ...y, subjects: y.subjects.filter(s => s.id !== subjectId) }
             )),
         });
+    };
+
+    // ── Scanner import ────────────────────────────────────────────────────────
+
+    const handleScanImport = (subjects: MedSubject[]) => {
+        setMedData(prev => prev.map(year =>
+            year.id !== activeYearId ? year : { ...year, subjects }
+        ));
     };
 
     // ── Year actions ──────────────────────────────────────────────────────────
@@ -589,6 +609,14 @@ const MedicalApp: React.FC = () => {
                 message={confirm.message}
                 confirmLabel={confirm.confirmLabel}
                 isDestructive={confirm.isDestructive}
+            />
+
+            {/* AI Scanner */}
+            <MedScannerModal
+                isOpen={isScannerOpen}
+                onClose={closeScannerAll}
+                activeYear={activeYear}
+                onImport={handleScanImport}
             />
 
             {/* Medical Footer */}

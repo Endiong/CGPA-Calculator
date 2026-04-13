@@ -11,6 +11,7 @@ import AIScannerModal from './components/AIScannerModal';
 import SettingsModal from './components/SettingsModal';
 import Grainient from './components/Grainient';
 import MedicalApp from './components/MedicalApp';
+import MedScannerModal from './components/MedScannerModal';
 import { handleExportPDF } from './utils/exportPDF';
 
 const ORDINALS = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
@@ -286,10 +287,11 @@ function App() {
         });
     };
 
-    // PDF Export — window.print() with Scholar Report HTML design
-    const executeExportPDF = () => {
-        handleExportPDF(data, scale, gradingConfig);
-    };
+    // PDF Export — iframe print (consistent design, no popup needed)
+    const executeExportPDF = () => handleExportPDF(data, scale, gradingConfig);
+
+    // Medical scanner state (controlled here so scan button lives in shared header)
+    const [isMedScannerOpen, setIsMedScannerOpen] = useState(false);
 
     const addYear = () => {
         const newYearId = generateId();
@@ -426,90 +428,118 @@ function App() {
                 />
             )}
             {/* Header */}
-            <header className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 py-3 z-30 transition-colors">
-                <div className="max-w-[960px] mx-auto flex items-center gap-2">
+            <header className="flex-none bg-white/90 dark:bg-[#1a1a24]/95 backdrop-blur-md border-b border-gray-100/80 dark:border-gray-700/40 px-4 sm:px-6 z-30 transition-colors">
+                <div className="max-w-[960px] mx-auto">
 
-                    {/* Left — Logo */}
-                    <div className="flex items-center gap-2 flex-none">
-                        <div className="size-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
-                            <Calculator size={16} />
+                    {/* ── Single row on sm+, two rows on mobile ─────────── */}
+                    <div className="flex items-center gap-2 py-3">
+
+                        {/* Left — Logo */}
+                        <div className="flex items-center gap-2 flex-none">
+                            <div className="size-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400">
+                                <Calculator size={16} />
+                            </div>
+                            <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 hidden sm:block">CGPA Calculator</h1>
                         </div>
-                        <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 hidden sm:block">CGPA Calculator</h1>
-                    </div>
 
-                    {/* Centre — Mode Toggle */}
-                    <div className="flex-1 flex justify-center">
-                        <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                            <button
-                                onClick={() => handleModeChange('bsc')}
-                                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                                    mode === 'bsc'
-                                        ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                                }`}
-                            >
-                                <span className="sm:hidden">BSc</span>
-                                <span className="hidden sm:inline">BSc / HND</span>
-                            </button>
-                            <button
-                                onClick={() => handleModeChange('medicine')}
-                                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                                    mode === 'medicine'
-                                        ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                                }`}
-                            >
-                                <span className="sm:hidden">Med</span>
-                                <span className="hidden sm:inline">Medicine</span>
-                            </button>
+                        {/* Centre — only visible on sm+ inline here */}
+                        <div className="hidden sm:flex flex-1 justify-center">
+                            <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                                <button
+                                    onClick={() => handleModeChange('bsc')}
+                                    className={`px-4 py-1 rounded-md text-xs font-semibold transition-all ${
+                                        mode === 'bsc'
+                                            ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
+                                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                    BSc / HND
+                                </button>
+                                <button
+                                    onClick={() => handleModeChange('medicine')}
+                                    className={`px-4 py-1 rounded-md text-xs font-semibold transition-all ${
+                                        mode === 'medicine'
+                                            ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
+                                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                    Medicine
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Right — Actions */}
-                    <div className="flex items-center gap-0.5 flex-none">
-                        {mode === 'bsc' && (
+                        {/* Right — Actions (always visible, flush right) */}
+                        <div className="flex items-center gap-0.5 ml-auto flex-none">
+                            {mode === 'bsc' && (
+                                <button
+                                    onClick={handleClearAllData}
+                                    className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                    title="Clear All Data"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
+                            )}
+                            {/* Scan — works for both modes */}
                             <button
-                                onClick={handleClearAllData}
-                                className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                title="Clear All Data"
-                            >
-                                <Trash2 size={15} />
-                            </button>
-                        )}
-                        {mode === 'bsc' && (
-                            <button
-                                onClick={() => setIsAIModalOpen(true)}
+                                onClick={() => mode === 'bsc' ? setIsAIModalOpen(true) : setIsMedScannerOpen(true)}
                                 className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                 title="Scan Document"
                             >
                                 <ScanLine size={15} />
                             </button>
-                        )}
-                        {mode === 'bsc' && (
-                            <button
-                                onClick={executeExportPDF}
+                            {mode === 'bsc' && (
+                                <button
+                                    onClick={executeExportPDF}
+                                    className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    title="Export to PDF"
+                                >
+                                    <FileDown size={15} />
+                                </button>
+                            )}
+                            <a
+                                href="https://github.com/Endiong/CGPA-Calculator"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                title="Export to PDF"
+                                title="GitHub Repository"
                             >
-                                <FileDown size={15} />
+                                <Github size={15} />
+                            </a>
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                title="Settings"
+                            >
+                                <Settings size={15} />
                             </button>
-                        )}
-                        <a
-                            href="https://github.com/Endiong/CGPA-Calculator"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            title="GitHub Repository"
-                        >
-                            <Github size={15} />
-                        </a>
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            title="Settings"
-                        >
-                            <Settings size={15} />
-                        </button>
+                        </div>
+
+                    </div>
+
+                    {/* ── Mobile-only second row: mode toggle centered ────── */}
+                    <div className="sm:hidden flex justify-center pb-2.5">
+                        <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                            <button
+                                onClick={() => handleModeChange('bsc')}
+                                className={`px-5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                    mode === 'bsc'
+                                        ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
+                                        : 'text-gray-600 dark:text-gray-400'
+                                }`}
+                            >
+                                BSc / HND
+                            </button>
+                            <button
+                                onClick={() => handleModeChange('medicine')}
+                                className={`px-5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                    mode === 'medicine'
+                                        ? 'bg-white dark:bg-gray-200 text-gray-900 shadow-sm border border-gray-200 dark:border-gray-300'
+                                        : 'text-gray-600 dark:text-gray-400'
+                                }`}
+                            >
+                                Medicine
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -518,7 +548,10 @@ function App() {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
                 {mode === 'medicine' ? (
-                    <MedicalApp />
+                    <MedicalApp
+                        scannerOpen={isMedScannerOpen}
+                        onScannerClose={() => setIsMedScannerOpen(false)}
+                    />
                 ) : (
                     <>
                         {/* Year Tabs — sticky inside scroll area so content scrolls behind it */}
