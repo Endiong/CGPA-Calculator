@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Plus, FileDown, Trash2, X, ScanLine, Settings, Github } from 'lucide-react';
+import { Calculator, Plus, FileDown, Trash2, X, ScanLine, Settings, Github, Loader2 } from 'lucide-react';
 import { Year, GradingScale, Course, GradingConfig } from './types';
 import { getInitialData, getGradingConfig } from './constants';
 import { calculateOverallStats, generateId, getClassOfDegree, createEmptyCourses } from './utils';
@@ -287,8 +287,12 @@ function App() {
         });
     };
 
-    // PDF Export — iframe print (consistent design, no popup needed)
-    const executeExportPDF = () => handleExportPDF(data, scale, gradingConfig);
+    // PDF Export — direct download via html2canvas + jsPDF (fonts pre-loaded in index.html)
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const executeExportPDF = () => {
+        if (pdfLoading) return;
+        handleExportPDF(data, scale, gradingConfig, () => setPdfLoading(true), () => setPdfLoading(false));
+    };
 
     // Medical scanner state (controlled here so scan button lives in shared header)
     const [isMedScannerOpen, setIsMedScannerOpen] = useState(false);
@@ -490,10 +494,14 @@ function App() {
                             {mode === 'bsc' && (
                                 <button
                                     onClick={executeExportPDF}
-                                    className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    title="Export to PDF"
+                                    disabled={pdfLoading}
+                                    className="flex items-center justify-center size-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                                    title={pdfLoading ? 'Generating PDF…' : 'Export to PDF'}
                                 >
-                                    <FileDown size={15} />
+                                    {pdfLoading
+                                        ? <Loader2 size={15} className="animate-spin" />
+                                        : <FileDown size={15} />
+                                    }
                                 </button>
                             )}
                             <a
