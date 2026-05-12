@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Pencil } from 'lucide-react';
+import { Plus, X, Pencil, Calculator } from 'lucide-react';
 import { MedYear, MedSubject } from '../types';
 import { generateId } from '../utils';
 import ConfirmationModal from './ConfirmationModal';
@@ -8,14 +8,22 @@ import MedScannerModal from './MedScannerModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PASS_MARK = 50;
 const DISTINCTION_MARK = 70;
-const CA_MAX = 30;
-const EXAM_MAX = 70;
+const CREDIT_MARK      = 60;
+const PASS_MARK        = 50;
+const BORDERLINE_MARK  = 40;
+const CA_MAX           = 30;
+const EXAM_MAX         = 70;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Local Types ──────────────────────────────────────────────────────────────
 
-type ResultType = 'distinction' | 'pass' | 'fail' | 'pending';
+type ResultType = 'distinction' | 'credit' | 'pass' | 'borderline' | 'fail' | 'pending';
+
+interface CumsEntry {
+    id: string;
+    label: string;
+    score: number | '';
+}
 
 interface ConfirmConfig {
     isOpen: boolean;
@@ -35,31 +43,49 @@ const getTotal = (sub: MedSubject): number | null => {
 
 const getResult = (sub: MedSubject): ResultType => {
     const total = getTotal(sub);
-    if (total === null) return 'pending';
+    if (total === null)            return 'pending';
     if (total >= DISTINCTION_MARK) return 'distinction';
-    if (total >= PASS_MARK) return 'pass';
+    if (total >= CREDIT_MARK)      return 'credit';
+    if (total >= PASS_MARK)        return 'pass';
+    if (total >= BORDERLINE_MARK)  return 'borderline';
     return 'fail';
 };
 
 const RESULT_LABEL: Record<ResultType, string> = {
     distinction: 'Distinction',
-    pass: 'Pass',
-    fail: 'Fail',
-    pending: '—',
+    credit:      'Credit',
+    pass:        'Pass',
+    borderline:  'Borderline',
+    fail:        'Fail',
+    pending:     '—',
 };
 
 const RESULT_CLASS: Record<ResultType, string> = {
     distinction: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+    credit:      'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
     pass:        'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400',
+    borderline:  'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
     fail:        'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
     pending:     'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500',
 };
 
 const TOTAL_TEXT_CLASS: Record<ResultType, string> = {
     distinction: 'text-emerald-600 dark:text-emerald-400',
+    credit:      'text-indigo-600 dark:text-indigo-400',
     pass:        'text-sky-600 dark:text-sky-400',
+    borderline:  'text-amber-600 dark:text-amber-400',
     fail:        'text-red-600 dark:text-red-400',
     pending:     'text-gray-300 dark:text-gray-600',
+};
+
+// ─── CUMS Calculation ─────────────────────────────────────────────────────────
+
+const calcCums = (entries: CumsEntry[]) => {
+    const valid = entries.filter(e => e.score !== '' && !isNaN(Number(e.score)));
+    if (valid.length === 0) return { mean: 0, cums: 0, count: 0 };
+    const mean = valid.reduce((s, e) => s + (e.score as number), 0) / valid.length;
+    const cums = Math.min(CA_MAX, parseFloat((mean * 0.3).toFixed(2)));
+    return { mean: parseFloat(mean.toFixed(2)), cums, count: valid.length };
 };
 
 // ─── Initial Data ─────────────────────────────────────────────────────────────
@@ -141,10 +167,60 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
     });
 
     // Scanner open/close is controlled by the parent (App.tsx header button)
-    // but we also need a local fallback
     const [localScannerOpen, setLocalScannerOpen] = useState(false);
     const isScannerOpen = scannerOpen || localScannerOpen;
     const closeScannerAll = () => { onScannerClose?.(); setLocalScannerOpen(false); };
+
+    // ── CUMS Calculator State ──────────────────────────────────────────────────
+
+    const [cumsOpenId, setCumsOpenId]     = useState<string | null>(null);
+    const [cumsEntriesMap, setCumsEntriesMap] = useState<Record<string, CumsEntry[]>>({});
+
+    const getCumsEntries = (subId: string): CumsEntry[] =>
+        cumsEntriesMap[subId] ?? [];
+
+    const initCumsEntries = (subId: string) => {
+        if (!cumsEntriesMap[subId]) {
+            setCumsEntriesMap(prev => ({
+                ...prev,
+                [subId]: [{ id: generateId(), label: '', score: '' }],
+            }));
+        }
+    };
+
+    const addCumsEntry = (subId: string) => {
+        setCumsEntriesMap(prev => ({
+            ...prev,
+            [subId]: [...(prev[subId] ?? []), { id: generateId(), label: '', score: '' }],
+        }));
+    };
+
+    const updateCumsEntry = (
+        subId: string,
+        entryId: string,
+        field: 'label' | 'score',
+        value: string | number | '',
+    ) => {
+        setCumsEntriesMap(prev => ({
+            ...prev,
+            [subId]: (prev[subId] ?? []).map(e =>
+                e.id === entryId ? { ...e, [field]: value } : e
+            ),
+        }));
+    };
+
+    const removeCumsEntry = (subId: string, entryId: string) => {
+        setCumsEntriesMap(prev => ({
+            ...prev,
+            [subId]: (prev[subId] ?? []).filter(e => e.id !== entryId),
+        }));
+    };
+
+    const applyCumsScore = (yearId: string, subId: string) => {
+        const { cums } = calcCums(getCumsEntries(subId));
+        updateSubject(yearId, subId, 'ca', cums);
+        setCumsOpenId(null);
+    };
 
     // ── Persistence ───────────────────────────────────────────────────────────
 
@@ -206,11 +282,10 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
                 subjects: [...year.subjects, ms('')],
             }
         ));
-        // Focus the new subject name field after render
         setTimeout(() => {
             const newSubject = medData.find(y => y.id === yearId)?.subjects.at(-1);
             if (newSubject) {
-                setEditSubjectId(newSubject.id + '-pending'); // triggers focus on next render
+                setEditSubjectId(newSubject.id + '-pending');
             }
         }, 50);
     };
@@ -308,17 +383,19 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
     // ── Year-level stats ──────────────────────────────────────────────────────
 
     const getYearStats = (year: MedYear) => {
-        let entered = 0, passed = 0, failed = 0, distinctions = 0;
+        let entered = 0, distinctions = 0, credits = 0, passed = 0, borderlines = 0, failed = 0;
         for (const sub of year.subjects) {
             const r = getResult(sub);
             if (r !== 'pending') {
                 entered++;
                 if      (r === 'distinction') { distinctions++; passed++; }
-                else if (r === 'pass')        passed++;
-                else                          failed++;
+                else if (r === 'credit')      { credits++;      passed++; }
+                else if (r === 'pass')         passed++;
+                else if (r === 'borderline')   borderlines++;
+                else                           failed++;
             }
         }
-        return { total: year.subjects.length, entered, passed, failed, distinctions };
+        return { total: year.subjects.length, entered, distinctions, credits, passed, borderlines, failed };
     };
 
     // ── Guard ─────────────────────────────────────────────────────────────────
@@ -326,7 +403,9 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
     if (!activeYear) return null;
 
     const ys = getYearStats(activeYear);
-    const yearAllPassed  = ys.entered > 0 && ys.failed === 0 && ys.entered === ys.total;
+    const allEntered     = ys.entered === ys.total && ys.total > 0;
+    const yearPromoted   = allEntered && ys.failed === 0 && ys.borderlines === 0;
+    const yearBorderline = ys.borderlines > 0 && ys.failed === 0;
     const yearAtRisk     = ys.failed > 0;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -372,7 +451,7 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
             </div>
 
             {/* ── Main Content ──────────────────────────────────────────── */}
-            <div className="max-w-[960px] mx-auto w-full px-4 sm:px-6 pb-36 pt-4">
+            <div className="max-w-[960px] mx-auto w-full px-4 sm:px-6 pb-36 pt-4 relative z-10">
 
                 {/* Year + Exam Name (editable) */}
                 <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -425,28 +504,33 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
                     )}
                 </div>
 
-                {/* Year Status Banner */}
+                {/* ── Year Status Banner ───────────────────────────────── */}
                 <div className={`mb-4 px-3 py-2 rounded-lg flex items-center justify-between text-xs ${
                     ys.entered === 0
                         ? 'bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/40'
                         : yearAtRisk
                         ? 'bg-red-50/80 dark:bg-red-900/20 border border-red-200/80 dark:border-red-800/40'
-                        : yearAllPassed
+                        : yearBorderline
+                        ? 'bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/40'
+                        : yearPromoted
                         ? 'bg-emerald-50/80 dark:bg-emerald-900/20 border border-emerald-200/80 dark:border-emerald-800/40'
                         : 'bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/80 dark:border-amber-800/40'
                 }`}>
                     <span className={`font-medium ${
                         ys.entered === 0   ? 'text-gray-500 dark:text-gray-400'
                         : yearAtRisk       ? 'text-red-700 dark:text-red-400'
-                        : yearAllPassed    ? 'text-emerald-700 dark:text-emerald-400'
+                        : yearBorderline   ? 'text-amber-700 dark:text-amber-400'
+                        : yearPromoted     ? 'text-emerald-700 dark:text-emerald-400'
                         :                   'text-amber-700 dark:text-amber-400'
                     }`}>
                         {ys.entered === 0
                             ? 'No scores entered yet — fill in CA and exam scores below'
                             : yearAtRisk
-                            ? `${ys.failed} subject${ys.failed > 1 ? 's' : ''} failed — resit required`
-                            : yearAllPassed
-                            ? `All ${ys.total} subjects passed`
+                            ? `Resit Required — ${ys.failed} subject${ys.failed > 1 ? 's' : ''} failed`
+                            : yearBorderline
+                            ? `Supplementary — ${ys.borderlines} subject${ys.borderlines > 1 ? 's' : ''} borderline (40–49)`
+                            : yearPromoted
+                            ? `Promoted — All ${ys.total} subjects passed`
                             : `${ys.entered} of ${ys.total} subjects entered`
                         }
                     </span>
@@ -457,6 +541,11 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
                                     {ys.distinctions} Distinction{ys.distinctions > 1 ? 's' : ''}
                                 </span>
                             )}
+                            {ys.credits > 0 && (
+                                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                                    {ys.credits} Credit{ys.credits > 1 ? 's' : ''}
+                                </span>
+                            )}
                             <span>{ys.passed}/{ys.total} Passed</span>
                         </div>
                     )}
@@ -465,10 +554,10 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
                 {/* ── Subject Table ─────────────────────────────────────── */}
                 <div className="bg-white dark:bg-[#1a1a24]/80 rounded-xl border border-gray-100 dark:border-gray-700/40 overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <div style={{ minWidth: '460px' }}>
+                        <div style={{ minWidth: '480px' }}>
 
                             {/* Header Row */}
-                            <div className="grid grid-cols-[1fr_76px_76px_66px_92px_30px] gap-0 border-b border-gray-100 dark:border-gray-700/40 px-4 py-2.5">
+                            <div className="grid grid-cols-[1fr_94px_76px_66px_92px_30px] gap-0 border-b border-gray-100 dark:border-gray-700/40 px-4 py-2.5">
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">Subject</span>
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 text-center">CA /30</span>
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 text-center">Exam /70</span>
@@ -479,101 +568,213 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
 
                             {/* Subject Rows */}
                             {activeYear.subjects.map((sub, idx) => {
-                                const result  = getResult(sub);
-                                const total   = getTotal(sub);
-                                const isLast  = idx === activeYear.subjects.length - 1;
+                                const result    = getResult(sub);
+                                const total     = getTotal(sub);
+                                const isLast    = idx === activeYear.subjects.length - 1;
                                 const isEditing = editSubjectId === sub.id;
+                                const cumsOpen  = cumsOpenId === sub.id;
+                                const entries   = getCumsEntries(sub.id);
+                                const { mean, cums, count } = calcCums(entries);
 
                                 return (
-                                    <div
-                                        key={sub.id}
-                                        className={`grid grid-cols-[1fr_76px_76px_66px_92px_30px] gap-0 px-4 py-2.5 items-center transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.02] group ${
-                                            !isLast ? 'border-b border-gray-50 dark:border-gray-800/60' : ''
-                                        }`}
-                                    >
-                                        {/* Subject Name */}
-                                        <div className="pr-2 min-w-0">
-                                            {isEditing ? (
+                                    <div key={sub.id}>
+                                        {/* ── Main Row ── */}
+                                        <div
+                                            className={`grid grid-cols-[1fr_94px_76px_66px_92px_30px] gap-0 px-4 py-2.5 items-center transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.02] group ${
+                                                !isLast && !cumsOpen ? 'border-b border-gray-50 dark:border-gray-800/60' : ''
+                                            }`}
+                                        >
+                                            {/* Subject Name */}
+                                            <div className="pr-2 min-w-0">
+                                                {isEditing ? (
+                                                    <input
+                                                        autoFocus
+                                                        value={draft}
+                                                        onChange={e => setDraft(e.target.value)}
+                                                        onBlur={() => commitSubjectName(activeYear.id, sub.id)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') commitSubjectName(activeYear.id, sub.id);
+                                                            if (e.key === 'Escape') setEditSubjectId(null);
+                                                        }}
+                                                        placeholder="Subject name"
+                                                        className="w-full text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded px-2 py-0.5 outline-none border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                                    />
+                                                ) : (
+                                                    <button
+                                                        onClick={() => { setEditSubjectId(sub.id); setDraft(sub.name); }}
+                                                        className="text-sm font-medium text-gray-800 dark:text-gray-200 text-left w-full flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-300 transition-colors group/sn"
+                                                    >
+                                                        <span className="truncate">
+                                                            {sub.name || <span className="text-gray-400 dark:text-gray-500 italic text-xs">Unnamed</span>}
+                                                        </span>
+                                                        <Pencil size={10} className="flex-shrink-0 opacity-0 group-hover/sn:opacity-40 transition-opacity" />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* CA Score + CUMS Calculator toggle */}
+                                            <div className="flex items-center justify-center gap-1">
                                                 <input
-                                                    autoFocus
-                                                    value={draft}
-                                                    onChange={e => setDraft(e.target.value)}
-                                                    onBlur={() => commitSubjectName(activeYear.id, sub.id)}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter') commitSubjectName(activeYear.id, sub.id);
-                                                        if (e.key === 'Escape') setEditSubjectId(null);
-                                                    }}
-                                                    placeholder="Subject name"
-                                                    className="w-full text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded px-2 py-0.5 outline-none border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                                    type="number"
+                                                    min={0}
+                                                    max={CA_MAX}
+                                                    step={0.5}
+                                                    value={sub.ca === '' ? '' : sub.ca}
+                                                    onChange={e => handleScoreChange(activeYear.id, sub.id, 'ca', e.target.value, CA_MAX)}
+                                                    placeholder="—"
+                                                    className="w-12 text-center text-sm font-medium bg-gray-50 dark:bg-gray-800/60 rounded-md px-1 py-1 text-gray-800 dark:text-gray-200 outline-none border border-transparent focus:border-gray-300 dark:focus:border-gray-600 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                 />
-                                            ) : (
+                                                {/* CUMS toggle button */}
                                                 <button
-                                                    onClick={() => { setEditSubjectId(sub.id); setDraft(sub.name); }}
-                                                    className="text-sm font-medium text-gray-800 dark:text-gray-200 text-left w-full flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-300 transition-colors group/sn"
+                                                    onClick={() => {
+                                                        if (cumsOpen) {
+                                                            setCumsOpenId(null);
+                                                        } else {
+                                                            initCumsEntries(sub.id);
+                                                            setCumsOpenId(sub.id);
+                                                        }
+                                                    }}
+                                                    title={cumsOpen ? 'Close CUMS calculator' : 'Calculate CA with CUMS formula'}
+                                                    className={`flex-shrink-0 size-5 flex items-center justify-center rounded transition-all ${
+                                                        cumsOpen
+                                                            ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40'
+                                                            : 'text-gray-300 dark:text-gray-600 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 opacity-0 group-hover:opacity-100'
+                                                    }`}
                                                 >
-                                                    <span className="truncate">
-                                                        {sub.name || <span className="text-gray-400 dark:text-gray-500 italic text-xs">Unnamed</span>}
-                                                    </span>
-                                                    <Pencil size={10} className="flex-shrink-0 opacity-0 group-hover/sn:opacity-40 transition-opacity" />
+                                                    <Calculator size={11} />
                                                 </button>
-                                            )}
+                                            </div>
+
+                                            {/* Exam Score Input */}
+                                            <div className="flex justify-center">
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={EXAM_MAX}
+                                                    step={0.5}
+                                                    value={sub.exam === '' ? '' : sub.exam}
+                                                    onChange={e => handleScoreChange(activeYear.id, sub.id, 'exam', e.target.value, EXAM_MAX)}
+                                                    placeholder="—"
+                                                    className="w-14 text-center text-sm font-medium bg-gray-50 dark:bg-gray-800/60 rounded-md px-1 py-1 text-gray-800 dark:text-gray-200 outline-none border border-transparent focus:border-gray-300 dark:focus:border-gray-600 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                />
+                                            </div>
+
+                                            {/* Total (read-only) */}
+                                            <div className="text-center">
+                                                <span className={`text-sm font-bold tabular-nums ${TOTAL_TEXT_CLASS[result]}`}>
+                                                    {total === null
+                                                        ? '—'
+                                                        : Number.isInteger(total) ? total : total.toFixed(1)
+                                                    }
+                                                </span>
+                                            </div>
+
+                                            {/* Result Badge */}
+                                            <div className="flex justify-center">
+                                                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-colors ${RESULT_CLASS[result]}`}>
+                                                    {RESULT_LABEL[result]}
+                                                </span>
+                                            </div>
+
+                                            {/* Delete Subject */}
+                                            <div className="flex justify-center">
+                                                <button
+                                                    onClick={() => deleteSubject(activeYear.id, sub.id)}
+                                                    title="Remove subject"
+                                                    className="size-6 flex items-center justify-center rounded text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        {/* CA Score Input */}
-                                        <div className="flex justify-center">
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                max={CA_MAX}
-                                                step={0.5}
-                                                value={sub.ca === '' ? '' : sub.ca}
-                                                onChange={e => handleScoreChange(activeYear.id, sub.id, 'ca', e.target.value, CA_MAX)}
-                                                placeholder="—"
-                                                className="w-14 text-center text-sm font-medium bg-gray-50 dark:bg-gray-800/60 rounded-md px-1 py-1 text-gray-800 dark:text-gray-200 outline-none border border-transparent focus:border-gray-300 dark:focus:border-gray-600 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            />
-                                        </div>
+                                        {/* ── CUMS Sub-Calculator Panel ──────────────────────── */}
+                                        {cumsOpen && (
+                                            <div className={`px-4 py-3 bg-indigo-50/50 dark:bg-indigo-950/20 border-t border-indigo-100 dark:border-indigo-900/30 ${!isLast ? 'border-b border-gray-50 dark:border-gray-800/60' : ''}`}>
+                                                {/* Panel header */}
+                                                <div className="flex items-center justify-between mb-2.5">
+                                                    <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                                                        <Calculator size={10} />
+                                                        CUMS Calculator — CA /30
+                                                    </p>
+                                                    <p className="text-[10px] text-indigo-400 dark:text-indigo-500 font-medium">
+                                                        Mean Average × 0.3
+                                                    </p>
+                                                </div>
 
-                                        {/* Exam Score Input */}
-                                        <div className="flex justify-center">
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                max={EXAM_MAX}
-                                                step={0.5}
-                                                value={sub.exam === '' ? '' : sub.exam}
-                                                onChange={e => handleScoreChange(activeYear.id, sub.id, 'exam', e.target.value, EXAM_MAX)}
-                                                placeholder="—"
-                                                className="w-14 text-center text-sm font-medium bg-gray-50 dark:bg-gray-800/60 rounded-md px-1 py-1 text-gray-800 dark:text-gray-200 outline-none border border-transparent focus:border-gray-300 dark:focus:border-gray-600 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            />
-                                        </div>
+                                                {/* Assessment entry rows */}
+                                                <div className="flex flex-col gap-1.5 mb-2">
+                                                    {entries.map((entry, ei) => (
+                                                        <div key={entry.id} className="flex items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={entry.label}
+                                                                onChange={e => updateCumsEntry(sub.id, entry.id, 'label', e.target.value)}
+                                                                placeholder={`Assessment ${ei + 1}`}
+                                                                className="flex-1 text-xs bg-white dark:bg-gray-800 rounded-md px-2 py-1.5 text-gray-700 dark:text-gray-300 outline-none border border-indigo-100 dark:border-indigo-900/40 focus:border-indigo-300 dark:focus:border-indigo-700 transition-colors min-w-0"
+                                                            />
+                                                            <input
+                                                                type="number"
+                                                                value={entry.score === '' ? '' : entry.score}
+                                                                min={0}
+                                                                max={100}
+                                                                step={0.5}
+                                                                onChange={e => {
+                                                                    const v = e.target.value;
+                                                                    if (v === '') { updateCumsEntry(sub.id, entry.id, 'score', ''); return; }
+                                                                    const n = parseFloat(v);
+                                                                    if (!isNaN(n)) updateCumsEntry(sub.id, entry.id, 'score', Math.min(100, Math.max(0, n)));
+                                                                }}
+                                                                placeholder="Score"
+                                                                className="w-20 text-center text-xs font-medium bg-white dark:bg-gray-800 rounded-md px-1 py-1.5 text-gray-700 dark:text-gray-300 outline-none border border-indigo-100 dark:border-indigo-900/40 focus:border-indigo-300 dark:focus:border-indigo-700 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            />
+                                                            <button
+                                                                onClick={() => removeCumsEntry(sub.id, entry.id)}
+                                                                className="flex-shrink-0 size-5 flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 transition-colors"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
 
-                                        {/* Total (read-only, computed) */}
-                                        <div className="text-center">
-                                            <span className={`text-sm font-bold tabular-nums ${TOTAL_TEXT_CLASS[result]}`}>
-                                                {total === null
-                                                    ? '—'
-                                                    : Number.isInteger(total) ? total : total.toFixed(1)
-                                                }
-                                            </span>
-                                        </div>
+                                                {/* Add Assessment */}
+                                                <button
+                                                    onClick={() => addCumsEntry(sub.id)}
+                                                    className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-200 transition-colors mb-3"
+                                                >
+                                                    <Plus size={11} />
+                                                    Add Assessment
+                                                </button>
 
-                                        {/* Result Badge */}
-                                        <div className="flex justify-center">
-                                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-colors ${RESULT_CLASS[result]}`}>
-                                                {RESULT_LABEL[result]}
-                                            </span>
-                                        </div>
-
-                                        {/* Delete Subject */}
-                                        <div className="flex justify-center">
-                                            <button
-                                                onClick={() => deleteSubject(activeYear.id, sub.id)}
-                                                title="Remove subject"
-                                                className="size-6 flex items-center justify-center rounded text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
-                                            >
-                                                <X size={12} />
-                                            </button>
-                                        </div>
+                                                {/* Result summary */}
+                                                {count > 0 ? (
+                                                    <div className="flex items-center justify-between bg-white/70 dark:bg-indigo-900/20 rounded-lg px-3 py-2 border border-indigo-100 dark:border-indigo-900/40">
+                                                        <div className="flex items-center gap-4 text-xs">
+                                                            <div>
+                                                                <span className="text-indigo-400 dark:text-indigo-500 font-medium">Mean </span>
+                                                                <span className="font-bold text-indigo-700 dark:text-indigo-300">{mean}%</span>
+                                                            </div>
+                                                            <span className="text-indigo-200 dark:text-indigo-800">→</span>
+                                                            <div>
+                                                                <span className="text-indigo-400 dark:text-indigo-500 font-medium">CUMS Score </span>
+                                                                <span className="font-bold text-indigo-700 dark:text-indigo-300">{cums} / 30</span>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => applyCumsScore(activeYear.id, sub.id)}
+                                                            className="text-[11px] font-bold px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white transition-colors flex-shrink-0 ml-3"
+                                                        >
+                                                            Use {cums} as CA
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-[11px] text-indigo-400 dark:text-indigo-500 text-center py-1">
+                                                        Enter assessment scores above to calculate your CA mark
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -593,9 +794,9 @@ const MedicalApp: React.FC<MedicalAppProps> = ({ scannerOpen = false, onScannerC
                     </div>
                 </div>
 
-                {/* Legend */}
+                {/* ── Legend ────────────────────────────────────────────── */}
                 <p className="mt-3 text-[11px] text-gray-400 dark:text-gray-500 text-center">
-                    CA out of 30 &middot; Exam out of 70 &middot; Pass at 50 / 100 &middot; Distinction at 70 / 100
+                    CA /30 &middot; Exam /70 &middot; Borderline ≥40 &middot; Pass ≥50 &middot; Credit ≥60 &middot; Distinction ≥70
                 </p>
 
             </div>
